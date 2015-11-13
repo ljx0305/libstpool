@@ -101,7 +101,7 @@ int main()
 	 * Wait for all tasks' completions 
 	 */
 	stpool_wait_all(pool, -1);
-	puts("All tasks has been removed completely.\n");
+	puts("All tasks have been removed completely.\n");
 	getchar();
 	
 	puts(stpool_stat_print(pool));

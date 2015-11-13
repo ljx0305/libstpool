@@ -585,10 +585,10 @@ EXPORT void stpool_group_throttle_enable(stpool_t *pool, int gid, int enable);
  * @note Its functions are equal to the codes presented below:
  *
  *       ___set_status(pool, gid, DESTROYING);
- *       ___notify_all_tasks(pool, gid, TASK_VMARK_GROUP_DESTROYING);
+ *       ___notify_all_tasks(pool, gid, TASK_VM_F_GROUP_DESTROYING);
  *       stpool_group_mark_all(pool, gid, TASK_VMARK_REMOVE);
- *       stpool_group_wait_all(pool, gid);
- *       ___wakeup_all_waiters(pool, gid, -1);
+ *       stpool_group_wait_all(pool, gid, -1);
+ *       ___wakeup_all_waiters(pool, gid);
  *       ___free(pool, gid)
  */
 EXPORT void stpool_group_delete(stpool_t *pool, int gid);

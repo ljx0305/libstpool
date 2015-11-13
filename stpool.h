@@ -3,7 +3,7 @@
 
 /** @mainpage COPYRIGHT (C) 2014 - 2020, piggy_xrh
  * 
- *	  Stpool is a portable and efficient tasks pool pool, it can work on diferent 
+ *	  Stpool is a portable and efficient tasks pool library, it can work on diferent 
  * platforms such as Windows, linux, unix and ARM.  
  *
  *    If you have any troubles or questions on using the pool, contact me.

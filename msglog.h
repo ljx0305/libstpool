@@ -12,6 +12,7 @@
  */
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)  
+#define _WIN
 #ifdef _USRDLL  
 #define EXPORT __declspec(dllexport)  
 #else  

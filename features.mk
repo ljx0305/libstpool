@@ -1,5 +1,5 @@
 # LIB mode type (Debug/Release)
-LIB_MODE = Debug
+LIB_MODE = Release
 
 # OS type (LINUX/ARM, OSX, NDK)
 OS_TYPE  = LINUX
