@@ -36,7 +36,7 @@ static inline void cpool_core_GC_leavel(cpool_core_t *core, thread_t *self)
 
 static inline long cpool_core_GC_gettimeol(cpool_core_t *core, thread_t *self)
 {
-	unsigned us;
+	long us;
 
 	assert (core->us_gc_left_timeo >= 0);
 	

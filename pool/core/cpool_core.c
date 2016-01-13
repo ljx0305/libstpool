@@ -635,9 +635,10 @@ do_create_threads(thread_t *self)
 		 */
 	exerr:
 		if (died || !ok) {
-			if (!locked) 
+			if (!locked){
 				OSPX_pthread_mutex_lock(&core->mut);
-			
+				locked = 1;
+				}
 			/**
 			 * We should check the thread status again if we
 			 * detect that it has been marked died before 
