@@ -26,7 +26,7 @@ struct smlink {
 };
 
 typedef struct smlink_q {
-	int n;
+	size_t n;
 	struct smlink *qfirst, *qlast;
 } smlink_q_t;
 
@@ -79,7 +79,7 @@ static inline void *smlink_q_pop(smlink_q_t *q) {
 typedef struct smcache {
 	const char *desc;
 	smlink_q_t xq;
-	int  nlimit_cache;
+	size_t  nlimit_cache;
 	long lflags;
 	void *opaque;
 	void *(*creater)(void *opaque);
@@ -131,7 +131,7 @@ static inline int smcache_need_destroy2(smcache_t *smc) {
  * The object who needn't to be destroyed is always allowed to
  * be add into the cache 
  */
-static inline int smcache_accessl(smcache_t *smc, void *obj, int ncached_limited) {
+static inline int smcache_accessl(smcache_t *smc, void *obj, size_t ncached_limited) {
 	return  ncached_limited < 0 || !smcache_need_destroy(smc, obj) ||
 				ncached_limited > smcache_nl(smc);
 }
@@ -159,7 +159,7 @@ static inline int smcache_remove_unflushable_objectsl(smcache_t *smc) {
 	return smcache_nl(smc); 
 }
 
-static inline int smcache_addl(smcache_t *smc, void *obj) {
+static inline size_t smcache_addl(smcache_t *smc, void *obj) {
 	/**
 	 * If the object is need to be destroyed, we push it 
 	 * into the front of the cache 
@@ -199,8 +199,8 @@ static inline void smcache_addl_dir(smcache_t *smc, void *obj) {
 }
 
 
-static inline int smcache_add(smcache_t *smc, void *obj) {
-	int n;
+static inline size_t smcache_add(smcache_t *smc, void *obj) {
+	size_t n;
 	
 	smcache_lock(smc);
 	n = smcache_addl(smc, obj);
@@ -219,9 +219,9 @@ static inline void smcache_add_dir(smcache_t *smc, void *obj) {
 	smcache_unlock(smc);
 }
 
-int smcache_add_limit(smcache_t *smc, void *obj, int ncached_limit);
+size_t smcache_add_limit(smcache_t *smc, void *obj, int ncached_limit);
 
-static inline int smcache_add_ql(smcache_t *smc, smlink_q_t *q) {
+static inline size_t smcache_add_ql(smcache_t *smc, smlink_q_t *q) {
 	assert (q && q->n > 0);
 
 	if (!smc->need_destroy) {
@@ -251,8 +251,8 @@ static inline void smcache_add_ql_dir(smcache_t *smc, smlink_q_t *q) {
 		smc->xq.qlast = q->qlast;
 }
 
-static inline int smcache_add_q(smcache_t *smc, smlink_q_t *q) {
-	int n;
+static inline size_t smcache_add_q(smcache_t *smc, smlink_q_t *q) {
+	size_t n;
 	
 	smcache_lock(smc);
 	n = smcache_add_ql(smc, q);
@@ -270,7 +270,7 @@ static inline void smcache_add_q_dir(smcache_t *smc, smlink_q_t *q) {
 	INIT_SMLINK_Q(q);
 }
 
-int smcache_add_q_limit(smcache_t *smc, smlink_q_t *q, int ncached_limit);
+size_t smcache_add_q_limit(smcache_t *smc, smlink_q_t *q, int ncached_limit);
 
 static inline void *smcache_getl(smcache_t *smc, int create) {
 	void *obj = smc->xq.qfirst;	
@@ -303,7 +303,7 @@ static inline void *smcache_get(smcache_t *smc, int create) {
 
 int smcache_get_flush_ql(smcache_t *smc, int ncached_limit, smlink_q_t *q);
 
-int smcache_flush(smcache_t *smc, int ncached_limit); 
+size_t smcache_flush(smcache_t *smc, int ncached_limit); 
 
 static inline void smcache_destroy(smcache_t *smc, void *obj) {
 	if (obj && smcache_need_destroy(smc, obj)) {

@@ -19,7 +19,7 @@
 static void *
 objpool_get(void *opaque) 
 {
-	int i = 0, n = 0, n_inc = 0;
+	size_t i = 0, n = 0, n_inc = 0;
 	objpool_t *p = opaque;
 	smlink_q_t *putq;
 	void *m0 = NULL, *m1;
@@ -94,7 +94,7 @@ objpool_get(void *opaque)
 	 * Sort the block according to its objects address 
 	 */
 	if (p->iblocks) {
-		int l = 0, r = p->iblocks -1;
+		size_t l = 0, r = p->iblocks -1;
 		
 		for (;r>l;) {	
 			if ((char *)m0 < p->blocks[(l+r)/2].begin) 

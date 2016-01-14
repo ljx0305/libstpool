@@ -37,7 +37,7 @@ cpool_gp_entry_create(cpool_core_t *core, const char *desc, int priq_num, int su
 			desc, ctime(&now));
 	
 	if (!desc) {
-		srandom(now);
+		srandom((unsigned int)now);
 		sprintf(buffer, "?dummy_%u_%p", (unsigned int)now, (void *)random());
 		desc = buffer;
 	}
