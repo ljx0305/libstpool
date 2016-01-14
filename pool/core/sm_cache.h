@@ -123,6 +123,10 @@ static inline int smcache_need_destroy(smcache_t *smc, void *obj) {
 			(*smc->need_destroy)(obj, smc->opaque));
 }
 
+static inline int smcache_need_destroy2(smcache_t *smc) {
+	return smc->xq.n > 0 && smcache_need_destroy(smc, smc->xq.qfirst);
+}
+
 /**
  * The object who needn't to be destroyed is always allowed to
  * be add into the cache 
@@ -134,7 +138,7 @@ static inline int smcache_accessl(smcache_t *smc, void *obj, int ncached_limited
 
 
 static inline int smcache_flushablel(smcache_t *smc, int ncached_limit) {
-	return ncached_limit >= 0 && smcache_nl(smc) > ncached_limit && 
+	return ncached_limit >= 0 && ncached_limit < smcache_nl(smc) && 
 				smcache_need_destroy(smc, smc->xq.qfirst);
 }
 

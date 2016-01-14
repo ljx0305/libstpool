@@ -235,7 +235,7 @@ OSPX_thread_entry(void *arglst)
 	}
 
 	pthread_exit(
-			(void *)(*thread_routine)(arg)
+			(void *)(long)(*thread_routine)(arg)
 		);
 }
 #endif

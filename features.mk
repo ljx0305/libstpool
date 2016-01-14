@@ -5,10 +5,10 @@ LIB_MODE = Release
 OS_TYPE  = LINUX
 
 # OS width (32/64)
-OS_WIDTH = 32
+OS_WIDTH = 64
 
 # Strip the library (yes/no)
-STRIP_LIB = no
+STRIP_LIB = yes
 
 #------------------------------------------
 FEATURES_FLAGS :=-DOS_T_$(OS_TYPE) -DOS_W_$(OS_WIDTH) 

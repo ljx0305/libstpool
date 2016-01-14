@@ -19,7 +19,7 @@
  * if user really needs to these features, user should pass their fetures masks to @ref 
  * stpool_create. 
  * 
- * All of the APIs is avalible for user, but if user calls a API but not having passed its
+ * All of the APIs is avalible for user, but if user calls a API without having passed its
  * needed fetures masks to @ref stpool_create, this API may return @ref POOL_ERR_NSUPPORT if 
  * the underlying pool object does not support it.
  */

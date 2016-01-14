@@ -32,7 +32,7 @@ enum {
 };
 
 #ifdef __cplusplus  
-extern "C"
+extern "C" {
 #endif
 
 /** a breif about the log message */

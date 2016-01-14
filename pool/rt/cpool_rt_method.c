@@ -178,7 +178,7 @@ cpool_rt_suspend(cpool_core_t *core, long ms)
 		 */
 		if (ms >= 0) {
 			if (ms > 0)
-				ms -= us_endr(us_clock) * 1000;
+				ms -= us_endr(us_clock) / 1000;
 
 			if (ms <= 0) {
 				e = eERR_TIMEDOUT;
@@ -257,7 +257,7 @@ cpool_rt_wait_all(cpool_core_t *core, long ms)
 		 */
 		if (ms >= 0) {
 			if (ms > 0)
-				ms -= us_endr(us_clock) * 1000;
+				ms -= us_endr(us_clock) / 1000;
 
 			if (ms <= 0) {
 				e = eERR_TIMEDOUT;
@@ -360,10 +360,10 @@ cpool_rt_task_queue(cpool_core_t *core, ctask_t *ptask)
 	cpool_rt_t *rtp = core->priv;
 	
 	assert (eTASK_VM_F_CACHE & ptask->f_vmflags &&
-			(!ptask->f_stat || eTASK_STAT_F_SCHEDULING & ptask->f_stat));
+			(!ptask->f_stat || (eTASK_STAT_F_WAITING|eTASK_STAT_F_SCHEDULING) & ptask->f_stat));
 
 	if (ptask->f_stat) {
-		if (ptask->f_stat & eTASK_STAT_F_WPENDING)
+		if (ptask->f_stat & (eTASK_STAT_F_WAITING|eTASK_STAT_F_WPENDING))
 			return 0;
 		reschedule = 1;
 	}
@@ -420,11 +420,15 @@ cpool_rt_pri_task_queue(cpool_core_t *core, ctask_t *ptask)
 	int e, reschedule = 0;
 	cpool_rt_t *rtp = core->priv;
 	
+	/**
+	 * BUGS: If user calls @stpool_task_queue in the Walk functions,
+	 * it'll take us into crash if the app is linked with the debug library.
+	 */
 	assert (eTASK_VM_F_CACHE & ptask->f_vmflags &&
-			(!ptask->f_stat || eTASK_STAT_F_SCHEDULING & ptask->f_stat));
+			(!ptask->f_stat || (eTASK_STAT_F_WAITING|eTASK_STAT_F_SCHEDULING) & ptask->f_stat));
 
 	if (ptask->f_stat) {
-		if (ptask->f_stat & eTASK_STAT_F_WPENDING)
+		if (ptask->f_stat & (eTASK_STAT_F_WAITING|eTASK_STAT_F_WPENDING))
 			return 0;
 		reschedule = 1;
 	}

@@ -108,7 +108,7 @@ int main()
 		stpool_wait_all(pool, -1);
 		us = us_end();
 
-		printf("Test costs %u ms \n", us / 1000);
+		printf("Test costs %.2f ms \n", (double)us / 1000);
 	}
 
 	/**

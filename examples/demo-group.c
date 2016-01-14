@@ -35,7 +35,7 @@
 
 void time_consuming_task_run(struct sttask *ptsk)
 {
-	msleep((int)ptsk->task_arg);
+	msleep((long)ptsk->task_arg);
 	
 	/**
 	 * Reschedule the task again 
@@ -66,7 +66,7 @@ void fast_task_run2(struct sttask *ptsk)
 int main()
 {
 	long eCAPs;
-	int idx, exe_func_timeout;
+	long idx, exe_func_timeout;
 	int gid_slow, gid_fast1, gid_fast2;
 	struct gscheduler_attr attr;
 	stpool_t *pool;
