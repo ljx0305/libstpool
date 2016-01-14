@@ -30,7 +30,7 @@ us_startr()
 	return us_now();
 }
 
-unsigned
+long
 us_endr(uint64_t clock)
 {
 	uint64_t clock_now = us_now();
@@ -47,7 +47,7 @@ us_start()
 	___clock = us_startr();
 }
 
-unsigned
+long
 us_end()
 {
 	return us_endr(___clock);

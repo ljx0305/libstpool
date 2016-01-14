@@ -17,7 +17,18 @@
 
 #ifdef _WIN  
 #define inline __inline  
-#define snprintf _snprintf  
+ //MSVC++ 12.0 _MSC_VER == 1800 (Visual Studio 2013)
+ //MSVC++ 11.0 _MSC_VER == 1700 (Visual Studio 2012)
+ //MSVC++ 10.0 _MSC_VER == 1600 (Visual Studio 2010)
+ //MSVC++ 9.0  _MSC_VER == 1500 (Visual Studio 2008)
+ //MSVC++ 8.0  _MSC_VER == 1400 (Visual Studio 2005)
+ //MSVC++ 7.1  _MSC_VER == 1310 (Visual Studio 2003)
+ //MSVC++ 7.0  _MSC_VER == 1300
+ //MSVC++ 6.0  _MSC_VER == 1200
+ //MSVC++ 5.0  _MSC_VER == 1100
+#if(_MSC_VER < 1900)
+#define snprintf _snprintf
+#endif // (_MSC_VER < 1900)
 #endif
 
 #define C_NONE    "\033[m"   
@@ -190,7 +201,7 @@ MSG_log_mfilter_remove(const char *m)
 	for (idx=0; idx<___log_entry_idx; idx++) {
 		if (!strcmp(___log_filter_mentry[idx], m)) {
 			if (idx != ___log_entry_idx - 1) {
-				memmove(___log_filter_mentry + idx, ___log_filter_mentry + idx + 1,
+				memmove((void*)(___log_filter_mentry + idx), (const void*)(___log_filter_mentry + idx + 1),
 					   ___log_entry_idx - idx -1);
 				
 				memmove(___log_filter_lentry + idx, ___log_filter_lentry + idx + 1,

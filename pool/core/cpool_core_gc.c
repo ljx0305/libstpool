@@ -72,7 +72,7 @@ cpool_core_GC_accessl(cpool_core_t *core, thread_t *self)
 inline int
 cpool_core_GC_expire(cpool_core_t *core, thread_t *self)
 {
-	unsigned us = us_endr(core->us_last_gcclock);
+	long us = us_endr(core->us_last_gcclock);
 	
 	return (us + 50000) >= core->us_gc_left_timeo || !us;
 }

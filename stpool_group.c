@@ -82,7 +82,7 @@ stpool_task_pgthrottle_wait(struct sttask *ptask, long ms)
 {
 	int e;
 	uint64_t us_now = 0;
-	unsigned us_elapsed;
+	long us_elapsed;
 	stpool_t *pool = TASK_CAST_DOWN(ptask)->pool;
 	
 	if (!pool) {
