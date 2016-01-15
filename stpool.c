@@ -567,7 +567,7 @@ static void
 __stpool_atexit(cpool_com_t *ins, void *opaque) 
 {
 	cpool_t *pool = opaque;
-
+	
 	pool->destroy(pool);
 }
 
@@ -725,13 +725,8 @@ stpool_release(stpool_t *pool)
 	
 	assert (ME_HAS(pool, release));
 
-	if (!(ref = ME_CALL(pool, release)(pool->ins))) {
-		if (!ME_HAS(pool, atexit))
-			__stpool_atexit(pool->ins, pool);
-		
-		if (___smc)
-			smcache_flush(___smc, 1);
-	}
+	if (!(ref = ME_CALL(pool, release)(pool->ins)) && ___smc) 
+		smcache_flush(___smc, 1);
 
 	return ref;
 }
