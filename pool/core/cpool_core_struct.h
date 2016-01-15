@@ -189,7 +189,7 @@ struct cpool_thread {
 	/**
 	 * A temple object cache
 	 */
-	size_t local_cache_limited;
+	int local_cache_limited;
 	smlink_q_t qcache;
 
 	/**

@@ -246,7 +246,6 @@ OSPX_sys_strerror(uint32_t code)
 		uint32_t error;
 		const char *desc;
 	} winerr[] = {
-		{ENETNOTINITIALIZED, "A successful WSAStartup call must occur before using this function"},
 		{ENETDOWN,        "The network subsystem or the associated service provider has failed"},
 		{ENETRESET,       "The connection has been broken due to keep-alive activity detecting"
 						  "a failure while the operation was in progress"},
@@ -269,11 +268,7 @@ OSPX_sys_strerror(uint32_t code)
 		{ECONNREFUSED,    "Connection refused"},
 		{EDESTADDRREQ,    "Destination address required"},
 		{EISCONN,     	  "Transport endpoint is already connected"},
-		{EABORTED,        "The virtual circuit was terminated due to a time-out or other failure"},
 		{EPROTOTYPE,      "The specified protocol is the wrong type for this socket"},
-		{EVER,            "The version of Windows Sockets support requested is not provided by"
-						  "this particular Windows Sockets implementation"},
-		{ESYSNOTREADY,    "The underlying network subsystem is not ready for network communication"}
 	};
 	static size_t wesize = sizeof(winerr)/sizeof(*winerr);
 	

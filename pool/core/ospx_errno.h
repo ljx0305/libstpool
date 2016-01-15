@@ -28,6 +28,10 @@
 #define EXTEND_BASE_ERR 40000
 #define EOFF(x) (EXTEND_BASE_ERR + x)
 
+/*
+ * POSIX errno check
+ */
+#ifndef ENOTSOCK 
 #define ENETNOTINITIALIZED EOFF(0)
 #define ENETDOWN     EOFF(1)
 #define ENETRESET    EOFF(2)
@@ -54,6 +58,7 @@
 #define ESYSNOTREADY  EOFF(23)
 #define EVER          EOFF(24)
 #define EPROTOTYPE    EOFF(25)
+#endif
 
 #else
 #define EXPORT
