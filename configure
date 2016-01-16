@@ -227,7 +227,8 @@ _MK_EOF
 
 # generate features.mk
 echo "CFLAGS+=$VAR_cflags" >features.mk || errExit
-echo -e "INSTALL_DIR=$VAR_prefix\n" >Makefile
+echo -e "INSTALL_DIR=$VAR_prefix" >Makefile
+echo -e "STRIP_LIB=$VAR_strip\n" >>Makefile
 cat .Makefile >> Makefile || errExit
 echo "generate Makefile succefully."
 
