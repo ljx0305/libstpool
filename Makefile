@@ -58,7 +58,7 @@ ifeq ($(STRIP_LIB), yes)
 	$(STRIP) $(STRIPFLAGS) $@
 endif
 
-EXAMPLE := $(addprefix examples/, demo demo-pri demo-sche demo-group demo-test)
+EXAMPLE := $(addprefix examples/, demo demo-pri demo-sche demo-group)
 
 demos: $(EXAMPLE)
 all: LIBS demos
@@ -78,9 +78,6 @@ endif
 	$(CC) $^ $(LDFLAGS) -o $@ 
 
 %demo-group:$(OBJS_DIR)/demo-group.o libstpool.a libmsglog.a
-	$(CC) $^ $(LDFLAGS) -o $@ 
-
-%demo-test:$(OBJS_DIR)/demo-test.o libstpool.a libmsglog.a
 	$(CC) $^ $(LDFLAGS) -o $@ 
 
 

@@ -50,7 +50,7 @@ smcache_init2(smcache_t *smc, const char *name, int nlimit_cache,
 }
 
 void 
-smcache_reserve(smcache_t *smc, size_t n) 
+smcache_reserve(smcache_t *smc, int n) 
 {
 	if (smc->creater) {
 		void *obj = (void *)0x1;
@@ -138,7 +138,7 @@ smcache_get_flush_ql(smcache_t *smc, int ncached_limit, smlink_q_t *q)
 	return q->n;
 }	
 
-size_t 
+int 
 smcache_flush(smcache_t *smc, int ncached_limit)
 {
 	if (!ncached_limit)
@@ -149,10 +149,10 @@ smcache_flush(smcache_t *smc, int ncached_limit)
 	return smcache_add_limit(smc, NULL, ncached_limit);
 }
 
-size_t 
+int 
 smcache_add_limit(smcache_t *smc, void *obj, int ncached_limit) 
 {
-	size_t nflushed = 0, enjected = 0;
+	int nflushed = 0, enjected = 0;
 	smlink_q_t rmq = {0, NULL, NULL};
 	
 	if (-1 == ncached_limit)
@@ -192,10 +192,10 @@ smcache_add_limit(smcache_t *smc, void *obj, int ncached_limit)
 	return nflushed;
 } 
 
-size_t 
+int 
 smcache_add_q_limit(smcache_t *smc, smlink_q_t *q, int ncached_limit) 
 {
-	size_t nflushed = 0;
+	int nflushed = 0;
 	smlink_q_t rmq = {0, NULL, NULL};
 	
 	if (-1 == ncached_limit)

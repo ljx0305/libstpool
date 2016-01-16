@@ -30,7 +30,7 @@ us_startr()
 	return us_now();
 }
 
-long
+unsigned long
 us_endr(uint64_t clock)
 {
 	uint64_t clock_now = us_now();
@@ -38,7 +38,7 @@ us_endr(uint64_t clock)
 	if (clock_now <= clock)
 		return 0;
 	
-	return (unsigned)(clock_now - clock);
+	return (unsigned long)(clock_now - clock);
 }
 
 void 
@@ -47,10 +47,21 @@ us_start()
 	___clock = us_startr();
 }
 
-long
+unsigned long
 us_end()
 {
 	return us_endr(___clock);
 }
 
 
+uint64_t
+ms_startr()
+{
+	return us_startr() / 1000;
+}
+
+unsigned long 
+ms_endr(uint64_t clock)
+{
+	return us_endr(clock * 1000) / 1000;
+}

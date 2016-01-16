@@ -130,6 +130,7 @@ reget:
 	if (ptask) { 
 		entry = gpool->entry + ptask->gid;
 		
+		assert (ptask->f_stat & eTASK_STAT_F_WAITING);
 		assert (TASK_CAST_FAC(ptask) == __cpool_com_priq_top(&entry->c));
 		
 		/**
@@ -252,6 +253,10 @@ __cpool_gp_task_removel(cpool_gp_t *gpool, ctask_entry_t *entry, ctask_trace_t *
 				gpool->core->npendings >= entry->npendings_eff &&
 				gpool->n_qtraces >= gpool->ndispatchings + gpool->core->n_qdispatchs + gpool->npendings);
 	}
+
+	// Update the top entry
+	if (!__cpool_com_priq_empty(&entry->c))
+		entry->top = TASK_CAST_TRACE(__cpool_com_priq_top(&entry->c));
 }
 
 void __cpool_gp_task_dispatcher(cpool_gp_t *gpool, struct list_head *rmq);

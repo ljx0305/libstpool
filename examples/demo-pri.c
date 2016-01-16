@@ -45,7 +45,7 @@ void task_run(struct sttask *ptask)
 
 void task_err_handler(struct sttask *ptask, long reasons) 
 {
-	fprintf(stderr, "**ERR: add '%s' (%lx)\n",
+	fprintf(stderr, "**ERR: '%s' (%lx)\n",
 			ptask->task_name, reasons);
 	
 }
@@ -54,10 +54,10 @@ int main()
 {
 	stpool_t *pool;
 	struct schattr attr[] = {
-		{0, 90, ep_SCHE_TOP},
-		{0, 40, ep_SCHE_BACK},
-		{0, 10, ep_SCHE_BACK},
 		{0, 0,  ep_SCHE_BACK},
+		{0, 10, ep_SCHE_BACK},
+		{0, 40, ep_SCHE_BACK},
+		{0, 90, ep_SCHE_TOP},
 	};
 	long eCAPs = eCAP_F_THROTTLE|eCAP_F_PRIORITY|eCAP_F_WAIT_ALL;
 
@@ -69,10 +69,10 @@ int main()
 	/**
 	 * Add a few tasks into the pool
 	 */
-	stpool_add_routine(pool, "zero_task",   task_run, task_err_handler, NULL, &attr[3]);
-	stpool_add_routine(pool, "low_task",    task_run, task_err_handler, NULL, &attr[2]);
-	stpool_add_routine(pool, "middle_task", task_run, task_err_handler, NULL, &attr[1]);
-	stpool_add_routine(pool, "hight_task",  task_run, task_err_handler, NULL, &attr[0]);
+	stpool_add_routine(pool, "zero_task",   task_run, task_err_handler, NULL, &attr[0]);
+	stpool_add_routine(pool, "low_task",    task_run, task_err_handler, NULL, &attr[1]);
+	stpool_add_routine(pool, "middle_task", task_run, task_err_handler, NULL, &attr[2]);
+	stpool_add_routine(pool, "hight_task",  task_run, task_err_handler, NULL, &attr[3]);
 	
 	puts(
 		stpool_scheduler_map_dump(pool)

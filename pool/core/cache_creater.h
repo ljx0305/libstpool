@@ -30,7 +30,7 @@
 		(self)->core = (c);\
 		(self)->run = 1;\
 		INIT_SMLINK_Q(&(self)->qcache); \
-		(self)->local_cache_limited = (c)->thread_local_cache_limited + (unsigned)((self) + time(NULL)) % 6; \
+		(self)->local_cache_limited = (c)->thread_local_cache_limited + (unsigned long)((self) + time(NULL)) % 6; \
 	} while (0)
 #else
 #define INIT_thread_structure(c, self) \
@@ -44,7 +44,7 @@
 		(self)->core = (c);\
 		(self)->run = 1;\
 		INIT_SMLINK_Q(&(self)->qcache); \
-		(self)->local_cache_limited = (c)->thread_local_cache_limited + (unsigned)((self) + time(NULL)) % 6; \
+		(self)->local_cache_limited = (c)->thread_local_cache_limited + (unsigned long)((self) + time(NULL)) % 6; \
 	} while (0)
 #endif
 

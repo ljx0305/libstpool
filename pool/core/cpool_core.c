@@ -401,9 +401,13 @@ cpool_core_release_ex(cpool_core_t *core, int is_wrthread, int clean)
 		 */ 
 		if (is_wrthread && smcache_nl(core->cache_task) >= 15000) {
 			int n;
+			
 			for (;;) {
 				n = smcache_nl(core->cache_task) - 3000;
-				if (n <= 0 || !smcache_flushablel(core->cache_task, n))
+
+				// FIX Warning: gcc -O2/-O3 
+				//if (n <= 0 || !smcache_flushablel(core->cache_task, n))
+				if (n <= 0 || !smcache_need_destroy2(core->cache_task))
 					break;
 				smcache_flush(core->cache_task, n);
 				msleep(1);
@@ -494,7 +498,7 @@ cpool_core_adjust_abs_l(cpool_core_t *core, int maxthreads, int minthreads)
  * It seems that random() can not work well on windows, so we use @cpool_core_random to instead.
  */
 #define cpool_core_random(core, self) \
-	(time(NULL) ^ (unsigned)self * 1927 * (unsigned)random())
+	(time(NULL) ^ (unsigned long)self * 1927 * (unsigned long)random())
 
 long
 cpool_core_get_restto(cpool_core_t *core, thread_t *self) 
@@ -535,14 +539,14 @@ cpool_core_get_restto(cpool_core_t *core, thread_t *self)
 	 
 	 else {
 		long t_interleaved;
-		unsigned nt = (unsigned)time(NULL);
+		unsigned long nt = (unsigned long)time(NULL);
 
 		/**
 		 * Initialize the random sed 
 		 */
 		srandom(nt);
 
-		self->last_to = (long)(core->acttimeo + (unsigned)cpool_core_random(core, self) % core->randtimeo); 
+		self->last_to = (long)(core->acttimeo + (unsigned long)cpool_core_random(core, self) % core->randtimeo); 
 		if (self->last_to < 0) 
 			(self->last_to) &= 0x0000ffff;
 		
@@ -635,10 +639,11 @@ do_create_threads(thread_t *self)
 		 */
 	exerr:
 		if (died || !ok) {
-			if (!locked){
+			if (!locked) {
 				OSPX_pthread_mutex_lock(&core->mut);
 				locked = 1;
-				}
+			}
+			
 			/**
 			 * We should check the thread status again if we
 			 * detect that it has been marked died before 
@@ -794,6 +799,9 @@ cpool_core_schedule(cpool_core_t *core, thread_t *self)
 	    if (!list_empty(&self->thq)) 
 		    do_create_threads(self);	
 		
+	//	printf("----------------------------task(%s) osid(%d\n",
+	//		__curtask->task_desc, OSPX_pthread_id());
+
 		/**
 		 * Run the task if the task is not marked with DISPATCHED, and then 
 		 * we call Method::finished to tell the user that the task has been 

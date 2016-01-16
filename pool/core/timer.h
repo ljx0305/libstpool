@@ -14,9 +14,11 @@
 #include "ospx_type.h"
 
 void us_start();
-long us_end();
+unsigned long us_end();
 
 uint64_t us_startr();
-long us_endr(uint64_t clock);
+unsigned long us_endr(uint64_t clock);
 
+uint64_t ms_startr();
+unsigned long ms_endr(uint64_t clock);
 #endif

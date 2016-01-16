@@ -89,10 +89,11 @@ cpool_gp_task_queue(cpool_core_t *core, ctask_t *ptask)
 	
 	OSPX_pthread_mutex_lock(&core->mut);
 	/**
-	 * Has the task been marked Re-scheduled ?
+	 * Has the task been marked Re-scheduled ? (FIX a BUG: stpool_task_queue >= 2)
 	 */
-	if (ptask->f_stat & eTASK_STAT_F_WPENDING) {
-		assert (ptask->f_stat & (eTASK_STAT_F_SCHEDULING|eTASK_STAT_F_DISPATCHING));
+	if (ptask->f_stat & (eTASK_STAT_F_WAITING|eTASK_STAT_F_WPENDING)) {
+		assert ((ptask->f_stat & eTASK_STAT_F_WAITING) || 
+				(ptask->f_stat & (eTASK_STAT_F_SCHEDULING|eTASK_STAT_F_DISPATCHING)));
 		OSPX_pthread_mutex_unlock(&core->mut);
 		return 0;
 	}

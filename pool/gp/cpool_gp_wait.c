@@ -352,7 +352,7 @@ __cpool_gp_w_invoke_r(cpool_gp_wrequester_t *r)
 	r->glbr.b_interrupted = 1;
 	
 	if (r->type & WAIT_CLASS_ENTRY) {
-		ctask_entry_t *entry;
+		ctask_entry_t *entry = NULL;
 		
 		/**
 		 * Find the entry according to the task's group id 
@@ -528,7 +528,7 @@ __cpool_gp_w_wait_cbl(cpool_gp_t *gpool, int entry_id, long type, Visit_cb cb, v
 				return 0;
 			peek = NULL;
 		}
-
+		
 		if (!peek) {
 			wtype = type;
 			switch (type) {
