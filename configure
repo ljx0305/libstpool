@@ -30,7 +30,7 @@ VAR_cflags=
 # clear the cache
 cacheClean
 
-options=`getopt -a -q -oh -l prefix:,enable-debug-mode,host: -- "$@" 2>/dev/null`
+options=`getopt -a -q -oh -l help,prefix:,enable-debug-mode,host: -- "$@" 2>/dev/null`
 eval set -- "$options"
 
 # parse the parameters
@@ -125,7 +125,7 @@ _CODE_EOF
 (gcc .test.c -o.test -lrt 2>/dev/null) 
 if test $? -eq 0
 	then
-		VAR_cflags+=" -DHAVE_CLOCK_GETITME"
+		VAR_cflags+=" -DHAVE_CLOCK_GETTIME"
 		echo " yes"
 	else
 		echo  " no"
