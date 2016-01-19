@@ -7,9 +7,6 @@ include $(CLEAR_VARS)
 include $(LOCAL_PATH)/../features.mk
 
 CFLAGS += -I. -Ipool -Ipool/core -Ipool/com -Ipool/rt -Ipool/gp
-ifeq ($(APP_PLATFORM), android-9)
-	CFLAGS += -DHAVE_PTHREAD_RWLOCK
-endif
 
 #libmsglog
 LOCAL_MODULE := libmsglog

@@ -69,9 +69,18 @@ if [ $VAR_libmode == "debug" ]
 		VAR_cflags+="-O2 -DNDEBUG -D_GNU_SOURCE -fPIC"
 fi
 
-#check the strip var
+# check the cross tools
+if [ ! -z ${VAR_cross} ]; then
+	echo "checking cross tools ..."
+	[ -z `which ${VAR_cross}gcc`   ]  && echo "- no ${VAR_cross}gcc"   && exit 1
+	[ -z `which ${VAR_cross}ar`    ]  && echo "- no ${VAR_cross}ar"    && exit 1
+	[ -z `which ${VAR_cross}strip` ]  && echo "- no ${VAR_cross}strip" && exit 1
+	echo " yes"
+fi
+echo "complier tools is configured with ${VAR_corss}gcc"
 
 # Check the os width
+if [ -z ${VAR_cross} ]; then
 echo -n "checking os width ..."
 cat << _CODE_EOF > .test.c
 #include <stdio.h>
@@ -81,7 +90,7 @@ int main()
 	return sizeof(long) == 8 ? 0 : 1;
 }
 _CODE_EOF
-(gcc .test.c -o.test && ./.test>> .features) 
+${VAR_cross}gcc .test.c -o.test && ./.test>> .features
 if test $? -eq 0
 	then
 		VAR_cflags+=" -DOS_W_64 -m64"
@@ -89,6 +98,14 @@ if test $? -eq 0
 	else
 		VAR_cflags+=" -DOS_W_32"
 		echo " 32"
+fi
+else
+read -p "select the os bit width(32/64): " _W
+if [ ${_W} == 64 ]; then
+	VAR_cflags+="-DOS_W_64 -m64"
+else
+	VAR_cflags+="-DOS_W_32"
+fi
 fi
 
 # Check pthread_rwlock
@@ -102,7 +119,7 @@ int main()
 	return 0;
 }
 _CODE_EOF
-(gcc .test.c -o.test -lpthread 2>/dev/null) 
+${VAR_cross}gcc .test.c -o.test -lpthread 2>/dev/null
 if test $? -eq 0
 	then
 		VAR_cflags+=" -DHAVE_PTHREAD_RWLOCK"
@@ -122,7 +139,7 @@ int main()
 	return 0;
 }
 _CODE_EOF
-(gcc .test.c -o.test -lrt 2>/dev/null) 
+${VAR_cross}gcc .test.c -o.test -lrt 2>/dev/null 
 if test $? -eq 0
 	then
 		VAR_cflags+=" -DHAVE_CLOCK_GETTIME"
@@ -142,7 +159,7 @@ int main()
 	return 0;
 }
 _CODE_EOF
-(gcc .test.c -o.test -lrt 2>/dev/null) 
+${VAR_cross}gcc .test.c -o.test -lrt 2>/dev/null
 if test $? -eq 0
 	then
 		VAR_cflags+=" -DHAVE_CLOCK_MONOTONIC"
@@ -162,7 +179,7 @@ int main()
 	return 0;
 }
 _CODE_EOF
-(gcc .test.c -o.test -lpthread 2>/dev/null) 
+${VAR_cross}gcc .test.c -o.test -lpthread 2>/dev/null 
 if test $? -eq 0
 	then
 		VAR_cflags+=" -DHAVE_PTHREAD_ATTR_GETINHERITSCHED"
@@ -182,7 +199,7 @@ int main()
 	return 0;
 }
 _CODE_EOF
-(gcc .test.c -o.test -lpthread 2>/dev/null) 
+${VAR_cross}gcc .test.c -o.test -lpthread 2>/dev/null
 if test $? -eq 0
 	then
 		VAR_cflags+=" -DHAVE_SEM_TIMEDWAIT"
@@ -202,7 +219,7 @@ int main()
 	return 0;
 }
 _CODE_EOF
-(gcc .test.c -o.test 2>/dev/null) 
+${VAR_cross}gcc .test.c -o.test 2>/dev/null 
 if test $? -eq 0
 	then
 		VAR_cflags+=" -DHAVE_PRCTL"
