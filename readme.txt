@@ -1,34 +1,25 @@
-How to complier the project ?
+How to complie the project ?
 
 WINDOWS:
 	stpool_win_proj (vs2008)
 
-LINUX:
-	.Configure the env in the features.mk
-     (
-	 	OS_TYPE = LINUX
-		...
-	 )
-  
-	. make clean; make all
+LINUX/MAC
+   ./configure
+   make && make install
 
-NDK:
-  .Configure the env in the features.mk
-     (
-	 	OS_TYPE = NDK
-		...
-	 )
-  
-  .ndk-build
+ARM
+  ./configure --host=cross-complier-
+  make && make install
 
+NDK
+   		./configure --host=cross-complier-
+   		make && make install
 
-MAC:
-   .Configure the env in the features.mk
-     (
-	 	OS_TYPE = OSX
-		...
-	)
-   
-   . make clean; make all
+   Or
+    	1. ./configure
+
+		2. Modify the features.mk (Remove some feature MACROs if the NDK does not support them.  eg.-DHAVE_PTHREAD_ATTR_GETINHERITSCHED)
+
+		3. ndk-build
   
 

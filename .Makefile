@@ -1,6 +1,4 @@
-#piggy_xrh@163.com
-
-.PHONY:LIBS clean
+.PHONY:all LIBS clean distclean install uninstall
 
 include complier.mk features.mk
 
@@ -10,8 +8,7 @@ CFLAGS += $(INCLUDE)
 VPATH =.:pool:pool/core:pool/com:pool/gp:pool/rt:examples
 OBJS_DIR :=.obj
 
-DEF_TARGET  :=libmsglog.a libmsglog.so \
-			libstpool.a libstpool.so  
+ALL_LIBS :=libmsglog.a libmsglog.so libstpool.a libstpool.so  
 
 OBJS_stpool := ospx.o  ospx_error.o timer.o\
 			  sm_cache.o objpool.o cpool_core.o cpool_core_gc.o \
@@ -23,7 +20,9 @@ OBJS_stpool := ospx.o  ospx_error.o timer.o\
 			  stpool.o stpool_group.o
 
 OBJS_msglog := msglog.o
-LIBS:PREPARE $(DEF_TARGET)
+
+all: LIBS demos
+LIBS:PREPARE $(ALL_LIBS)
 
 PREPARE:   
 	@for d in $(OBJS_DIR) $(OBJS_DEMO_DIR); do \
@@ -61,7 +60,6 @@ endif
 EXAMPLE := $(addprefix examples/, demo demo-pri demo-sche demo-group)
 
 demos: $(EXAMPLE)
-all: LIBS demos
 
 LDFLAGS +=-lpthread -lm
 ifneq ($(filter -DHAVE_CLOCK_GETTIME, $(CFLAGS)), )
@@ -91,4 +89,33 @@ demos-clean:
 	-@rm $(EXAMPLE)
 
 clean:
-	-@rm $(OBJS_DIR)/*.o $(DEF_TARGET) $(EXAMPLE) *.o -fr
+	-@rm $(OBJS_DIR)/*.o $(ALL_LIBS) $(EXAMPLE) *.o -fr
+
+distclean: clean
+	-@rm features.mk complier.mk Makefile
+
+install:LIBS
+	@if [ ! -z $(INSTALL_DIR) ]; then \
+		if [ ! -d $(INSTALL_DIR)/include ]; then mkdir -p $(INSTALL_DIR)/include || exit 1; fi; \
+		if [ ! -d $(INSTALL_DIR)/lib ]; then mkdir -p $(INSTALL_DIR)/lib || exit 1; fi; \
+		echo "cp stpool.h stpool_group.h stpool_caps.h msglog.h $(INSTALL_DIR)/include"; \
+		cp stpool.h stpool_group.h stpool_caps.h msglog.h $(INSTALL_DIR)/include; \
+		echo "cp libmsglog.a libmsglog.so libstpool.a libstpool.so $(INSTALL_DIR)/lib"; \
+		cp libmsglog.a libmsglog.so libstpool.a libstpool.so $(INSTALL_DIR)/lib; \
+	fi;
+
+uninstall:
+	@if [ -d $(INSTALL_DIR) ]; then \
+		if [ -d $(INSTALL_DIR)/include ]; then \
+			echo "cd $(INSTALL_DIR)/include && rm stpool.h stpool_group.h stpool_caps.h msglog.h"; \
+			cd $(INSTALL_DIR)/include && rm -fr stpool.h stpool_group.h stpool_caps.h msglog.h 2>/dev/null; \
+			cd .. && rm -d include; \
+			cd ..; \
+		fi; \
+		if [ -d $(INSTALL_DIR)/lib ]; then \
+			echo "cd $(INSTALL_DIR)/lib && rm libmsglog.a libmsglog.so libstpool.a libstpool.so"; \
+			cd $(INSTALL_DIR)/lib && `rm -fr libmsglog.a libmsglog.so libstpool.a libstpool.so 2>/dev/null`; \
+			cd .. && rm -d lib && cd ..; \
+		fi;\
+		rm -d $(INSTALL_DIR); \
+	fi;
