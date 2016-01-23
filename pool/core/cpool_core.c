@@ -799,9 +799,6 @@ cpool_core_schedule(cpool_core_t *core, thread_t *self)
 	    if (!list_empty(&self->thq)) 
 		    do_create_threads(self);	
 		
-	//	printf("----------------------------task(%s) osid(%d\n",
-	//		__curtask->task_desc, OSPX_pthread_id());
-
 		/**
 		 * Run the task if the task is not marked with DISPATCHED, and then 
 		 * we call Method::finished to tell the user that the task has been 

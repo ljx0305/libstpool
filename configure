@@ -11,7 +11,7 @@ function showUsage()
 
 function cacheClean()
 {
-	rm .features .test .test.c -fr 2>/dev/null
+	rm .test .test.c -fr 2>/dev/null
 }
 
 function errExit()
@@ -77,7 +77,7 @@ if [ ! -z ${VAR_cross} ]; then
 	[ -z `which ${VAR_cross}strip` ]  && echo "- no ${VAR_cross}strip" && exit 1
 	echo " yes"
 fi
-echo "complier tools is configured with ${VAR_corss}gcc"
+echo "complier tools: ${VAR_corss}gcc"
 
 # Check the os width
 if [ -z ${VAR_cross} ]; then

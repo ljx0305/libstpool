@@ -202,7 +202,12 @@ static inline void cpool_core_objs_local_flush(thread_t *self)
 {
 	if (smlink_q_size(&self->qcache)) 
 		smcache_add_q_dir(self->core->cache_task, &self->qcache);
-	self->flags &= ~THREAD_STAT_FLUSH;
+	
+	if (THREAD_STAT_FLUSH & self->flags) {
+		OSPX_pthread_mutex_lock(&self->core->mut);
+		self->flags &= ~THREAD_STAT_FLUSH;
+		OSPX_pthread_mutex_unlock(&self->core->mut);
+	}
 }
 
 static inline void cpool_core_objs_local_flush_all(cpool_core_t *core)

@@ -133,9 +133,12 @@ int main()
 	printf("\nPress any key to test rescheduling task. <then press key to stop testing.>\n");
 	getchar();
 	
-	ptsk = stpool_task_new(pool, "test-reschedule", task_reschedule, NULL, &c);
-	if (!ptsk) 
-		printf("***Err: @stpool_task_new() returns NULL. (try eCAP_F_TASK_EX)\n");
+	ptsk = stpool_task_new(NULL, "test-reschedule", task_reschedule, NULL, &c);
+	
+	/** Attach the destinational pool */
+	error = stpool_task_set_p(ptsk, pool);
+	if (error)
+		printf("***Err: %d. (try eCAP_F_TASK_EX)\n", error);
 	else {
 		stpool_task_set_userflags(ptsk, 0x1);
 		stpool_task_queue(ptsk);
@@ -143,8 +146,9 @@ int main()
 		getchar();
 		stpool_task_set_userflags(ptsk, 0);
 		stpool_task_wait(ptsk, -1);
-		stpool_task_delete(ptsk);
 	}
+	stpool_task_delete(ptsk);
+	
 
 	/*-------------------------------------------------------------------/
 	/--------------------Test the throttle------------------------------/
