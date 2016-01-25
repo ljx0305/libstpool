@@ -518,13 +518,13 @@ stpool_task_stat(struct sttask *ptask)
 	if (!pool || !ptask0->f_stat)
 		return 0;
 
-	return TASK_CAST_FAC(ptask)->f_stat;
+	return ptask0->f_stat;
 }
 
 EXPORT long
 stpool_task_vm(struct sttask *ptask) 
 {
-	return TASK_CAST_FAC(ptask)->f_vmflags & (eTASK_VM_F_REMOVE_FLAGS|eTASK_VM_F_DISABLE_QUEUE|eTASK_VM_F_ENABLE_QUEUE);
+	return TASK_CAST_DOWN(ptask)->f_vmflags & (eTASK_VM_F_REMOVE_FLAGS|eTASK_VM_F_DISABLE_QUEUE|eTASK_VM_F_ENABLE_QUEUE);
 }
 
 EXPORT long

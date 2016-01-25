@@ -798,7 +798,7 @@ EXPORT void stpool_task_mark(struct sttask *ptask, long lflags);
  * 	@ref stpool_task_detach will be only allowed to be called in
  * 	the task's working routine or in the task's error handler. 
  * 	Usally a traceable task will be connected with a pool after its 
- * 	having been added into the pool succefully. the task will removed
+ * 	having been added into the pool succefully. the task will be removed
  * 	from the pool if its callback has been done completly, it means 
  * 	that it is not safe to destroy the task object in the task's callback, 
  * 	@stpool_task_detach is designed to resolve this problem, it will force 
@@ -1096,7 +1096,7 @@ EXPORT void stpool_adjust_abs(stpool_t *pool, int maxthreads, int minthreads);
  * Ajust the the working threads number
  *
  * @ref stpool_adjust is similar to @ref stpool_adjust_abs, the only difference 
- * between them is that the paraments received by @ref stpool_adjust are relative.
+ * between them is that the parameters received by @ref stpool_adjust are relative.
  *
  *    stpool_adjust(pool, 1, 2)  <==> stpool_adjust_abs(
  *    									    pool, 

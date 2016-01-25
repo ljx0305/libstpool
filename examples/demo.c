@@ -178,8 +178,8 @@ int main()
 	stpool_add_routine(pool, "zero-priority", task_run, task_err_handler, &c, NULL);
 		
 	/**
-	 * task("non-zero-priority") be scheduled prior to the @task_run since the it
-	 * has a higher priority.
+	 * task("non-zero-priority") will be scheduled prior to the task("zero-priority") 
+	 * since it has a higher priority.
 	 */
 	stpool_add_routine(pool, "non-zero-priority", task_run, task_err_handler, &c, &attr); 
 	

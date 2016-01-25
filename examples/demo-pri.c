@@ -47,7 +47,6 @@ void task_err_handler(struct sttask *ptask, long reasons)
 {
 	fprintf(stderr, "**ERR: '%s' (%lx)\n",
 			ptask->task_name, reasons);
-	
 }
 
 int main()
@@ -74,9 +73,6 @@ int main()
 	stpool_add_routine(pool, "middle_task", task_run, task_err_handler, NULL, &attr[2]);
 	stpool_add_routine(pool, "hight_task",  task_run, task_err_handler, NULL, &attr[3]);
 	
-	puts(
-		stpool_scheduler_map_dump(pool)
-		);
 	puts("Print any key to resume the pool ...\n");
 	getchar();
 	
@@ -103,8 +99,6 @@ int main()
 	stpool_wait_all(pool, -1);
 	puts("All tasks have been removed completely.\n");
 	getchar();
-	
-	puts(stpool_stat_print(pool));
 	
 	/**
 	 * Release the pool 

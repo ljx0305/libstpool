@@ -90,7 +90,7 @@ int main()
 	return sizeof(long) == 8 ? 0 : 1;
 }
 _CODE_EOF
-${VAR_cross}gcc .test.c -o.test && ./.test>> .features
+${VAR_cross}gcc .test.c -o.test && ./.test
 if test $? -eq 0
 	then
 		VAR_cflags+=" -DOS_W_64 -m64"

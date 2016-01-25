@@ -73,9 +73,6 @@ cpool_gp_task_queue(cpool_core_t *core, ctask_t *ptask)
 	cpool_gp_t *gpool = core->priv;
 	ctask_entry_t *entry;
 	
-	//if (!memcmp(ptask->task_desc, "Js", 2))
-	//	printf("queue msgcallback:vm(%p)-stat(%p) gid(%d)\n", ptask->f_vmflags, ptask->f_stat, gid);
-
 	/**
 	 * Remove the REMOVE flags
 	 */

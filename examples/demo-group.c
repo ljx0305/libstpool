@@ -110,7 +110,7 @@ int main()
 	gid_slow = stpool_group_create(pool, "g_slow", &attr, 1, 1);
 	
 	/**
-	 * Add 100 tasks into the group 
+	 * Add 10 tasks into the group 
 	 */
 	for (idx=0; idx<10; idx++) {
 		exe_func_timeout = 1000 * (idx % 5 + 1);

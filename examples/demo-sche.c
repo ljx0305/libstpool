@@ -104,6 +104,7 @@ int main()
 		 * Wake up the pool to schedule tasks 
 		 */
 		stpool_resume(pool);		
+		
 		us_start();
 		stpool_wait_all(pool, -1);
 		us = us_end();
@@ -119,7 +120,7 @@ int main()
 	free(arg);
 	
 	now = time(NULL);
-	printf("--OK. finished. <arg: %d> %s\n%s\n", 
+	printf("--OK. finished. <sum: %d> %s\n%s\n", 
 		sum, ctime(&now), stpool_stat_print(pool));
 
 #if 0
