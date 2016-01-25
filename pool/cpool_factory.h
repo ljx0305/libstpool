@@ -298,24 +298,6 @@ enum {
 	 *  to turn the throttle swither on
 	 */
 	eERR_THROTTLE = 4,
-
-	/**
-	 * The task has been removed by user
-	 *
-	 * It indicates that the task has been removed by one of APIs below: \n
-	 * <pre>
-	 *
-	 * @ref task_remove 
-	 * @ref task_mark 
-	 * @ref remove_all
-	 * @ref mark_all
-	 * @ref mark_cb
-	 * @ref group_remove_all  (If the library supports GROUP)
-	 * @ref group_mark_all    (If the library supports GROUP)
-	 * @ref group_mark_cb     (If the library supports GROUP)
-	   </pre>
-	 */
-	eTASK_ERR_REMOVED = 5,				
 		
 	/**
 	 * The task is requed to be added into a deferent pool, But the task 

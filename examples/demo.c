@@ -138,7 +138,7 @@ int main()
 	/** Attach the destinational pool */
 	error = stpool_task_set_p(ptsk, pool);
 	if (error)
-		printf("***Err: %d. (try eCAP_F_TASK_EX)\n", error);
+		printf("***Err: %d(%s). (try eCAP_F_TASK_EX)\n", error, stpool_strerror(error));
 	else {
 		stpool_task_set_userflags(ptsk, 0x1);
 		stpool_task_queue(ptsk);

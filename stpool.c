@@ -12,6 +12,7 @@
 #include <assert.h>
 
 #include "ospx.h"
+#include "ospx_errno.h"
 #include "ospx_compatible.h"
 #include "timer.h"
 #include "msglog.h"
@@ -230,7 +231,7 @@ stpool_task_set_p(struct sttask *ptask, stpool_t *pool)
 						__FUNCTION__, ptask0->task_desc, ptask0, ptask0->ref, 
 						pool ? ME_CALL(pool, task_stat)(pool->ins, ptask0, NULL) : (long)NULL);
 				
-				return POOL_ERR_BUSY;
+				return POOL_TASK_ERR_BUSY;
 			} 
 					
 			if (!ME_EX_HAS(pool, task_wsync) || (e = ME_EX_CALL(pool, task_wsync)(pool->ins, ptask0))) {
@@ -575,6 +576,40 @@ EXPORT const char *
 stpool_version() 
 {
 	return "2015/10/12-3.2.0-libstpool-eCAPs";
+}
+
+EXPORT const char *
+stpool_strerror(int error)
+{
+	const char *errmsgs[] = {
+		"ok",
+		"system is out of memory",
+		"pool is being destroyed",
+		"unkown",
+		"the throttle of the pool is turned on",
+		"unkown",
+		"unkown",
+		"task is in progress",
+		"task has been enjected",
+		"unkown destination",
+		"group throttle is turned on",
+		"the group does not exist",
+		"the group is being destroyed",
+		"timeout",
+		"the operation has been interrupted",
+		"unkown",
+		"the servering pool does not support the operation",
+		"unkown",
+	};
+
+	if (error >= 0  && error <= sizeof(errmsgs)/sizeof(*errmsgs)) {
+		if (error == POOL_ERR_errno)
+			return OSPX_sys_strerror(errno);
+
+		return errmsgs[error];
+	}
+
+	return "unkown";
 }
 
 EXPORT stpool_t * 

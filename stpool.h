@@ -48,24 +48,6 @@ enum {
 	 *  to turn the throttle swither on
 	 */
 	POOL_ERR_THROTTLE = 4,
-
-	/**
-	 * The task has been removed by user
-	 *
-	 * It indicates that the task has been removed by one of APIs below: \n
-	 * <pre>
-	 *
-	 * @ref stpool_task_remove 
-	 * @ref stpool_task_mark 
-	 * @ref stpool_remove_all
-	 * @ref stpool_mark_all
-	 * @ref stpool_mark_cb
-	 * @ref stpool_group_remove_all  
-	 * @ref stpool_group_mark_all    
-	 * @ref stpool_group_mark_cb     
-	   </pre>
-	 */
-	POOL_TASK_ERR_REMOVED = 5,				
 		
 	/**
 	 * The operation can not be done since the task is in progress now 
@@ -141,11 +123,6 @@ enum {
 	 * (The errno has been set properly)
 	 */
 	POOL_ERR_errno  = 17,
-
-	/**
-	 * The task is in progress
-	 */
-	POOL_ERR_BUSY = 18,
 };
 
 /** Task error reasons */
@@ -921,6 +898,15 @@ EXPORT int   stpool_task_wait_any(struct sttask *entry[], int n, long ms);
  *    y/m/d-version-desc
  */
 EXPORT const char *stpool_version();
+
+/**
+ * Get the description of the error code
+ *
+ * @param [in] error    the error code returned by the library
+ *
+ * @return the const string to describle the error code
+ */
+EXPORT const char *stpool_strerror(int error);
 
 /**
  * Create a task pool
