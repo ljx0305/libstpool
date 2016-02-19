@@ -35,12 +35,16 @@
  */
 void task_run(struct sttask *ptask)	
 {
+	int e;
+
 	printf("\n\nRun %s\n", ptask->task_name);
 	
 	msleep(1000);
 	
 	/** Reschedule the task */
-	stpool_task_queue(ptask);
+	if ((e = stpool_task_queue(ptask)))
+		fprintf(stderr, "***reschedule(%s): '%s'\n",
+			ptask->task_name, stpool_strerror(e));
 }
 
 void task_err_handler(struct sttask *ptask, long reasons) 
@@ -91,7 +95,7 @@ int main()
 	/**
 	 * Remove all pendings task
 	 */
-	stpool_remove_all(pool, 1);
+	stpool_remove_all(pool, 0);
 
 	/**
 	 * Wait for all tasks' completions 

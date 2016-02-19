@@ -142,7 +142,7 @@ cpool_core_ctor(cpool_core_t *core, const char *desc, const cpool_core_method_t 
 	{
 		time_t n = time(NULL);
 
-		MSG_log(M_CORE, LOG_WARN,
+		MSG_log(M_CORE, LOG_INFO,
 				"Core (\"%s\"/%p) starts up at %s",
 				core->desc, core, ctime(&n));
 	}
@@ -389,7 +389,7 @@ cpool_core_release_ex(cpool_core_t *core, int is_wrthread, int clean)
 		{
 			time_t n = time(NULL);
 	
-			MSG_log(M_CORE, LOG_WARN,
+			MSG_log(M_CORE, LOG_INFO,
 				"Core (\"%s\"/%p/%p) is destroyed at %s",
 				core->desc, core, core->priv, ctime(&n));
 		}

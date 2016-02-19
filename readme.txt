@@ -4,14 +4,14 @@ WINDOWS:
 	stpool_win_proj (vs2008)
 
 LINUX/MAC
-   ./configure --prefix=install-dir
+   ./configure --prefix=/usr
    make && make install
 
 ARM
   ./configure --prefix=install-dir --host=cross-complier-
   make && make install
 
-NDK
+NDK(android)
    		./configure --prefix=install-dir --host=cross-complier-
    		make && make install
 

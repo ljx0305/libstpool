@@ -93,7 +93,7 @@ int main()
 	
 	/** Create a pool */
 	pool = stpool_create("mypool", /** pool name */
-						 eCAPs,    /** capabilites */
+						 eCAPs,    /** neccessary capabilites */
 	                     20,	   /** limited threads number*/
 				          0,	   /** number of threads reserved to waiting for tasks*/
 				          0,	   /** do not suspend the pool */
