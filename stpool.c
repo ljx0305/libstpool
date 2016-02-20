@@ -132,65 +132,6 @@ stpool_task_clone(struct sttask *ptask, int clone_schattr)
 	return nptask;
 }
 
-EXPORT int 
-stpool_task_clone_and_queue(struct sttask *ptask, int clone_schattr, struct sttask **ptask2, void *task_arg)
-{
-	int e;
-	ctask_t *nptask;
-	cpool_t *pool = TASK_CAST_DOWN(ptask)->pool;
-	struct schattr *attr = NULL, attr0;
-	
-	if (!pool) 
-		return POOL_TASK_ERR_DESTINATION;
-	
-	if (clone_schattr) {
-		attr = &attr0;
-		stpool_task_getschattr(ptask, attr);
-	}
-
-	if (!task_arg)
-		task_arg = ptask->task_arg;
-	
-	if (!ptask2) {
-		/**
-		 * We try to get a task object from the cache, 
-	 	 * (@__stpool_cache_put(ptask) should be called later to recycle it) 
-		 */
-		nptask = __stpool_cache_get(pool);
-		if (!nptask)
-			return POOL_ERR_NOMEM;
-	
-		__stpool_task_INIT(nptask, ptask->task_name, ptask->task_run, ptask->task_err_handler, task_arg);
-		assert (!nptask->ref);
-	
-	} else {
-		if (!(*ptask2 = stpool_task_new(pool, ptask->task_name, ptask->task_run, ptask->task_err_handler, task_arg)))
-			return POOL_ERR_NOMEM;
-		nptask = (ctask_t *)*ptask2;
-	}
-	nptask->gid = TASK_CAST_DOWN(ptask)->gid;
-
-	if (attr)
-		stpool_task_setschattr(TASK_CAST_UP(nptask), attr);
-
-	/**
-	 * Deliver the task into the queue 
-	 */
-	if ((e = ME_CALL(pool, task_queue)(pool->ins, nptask))) {
-		if (ptask2)
-			stpool_task_delete(*ptask2);	
-		else
-			__stpool_cache_put(pool, nptask);
-		
-		/**
-		 * Get the export error code according to the inner error code 
-		 */
-		return __stpool_liberror(e);
-	}
-
-	return 0;
-}
-
 EXPORT void 
 stpool_task_delete(struct sttask *ptask) 
 {	
@@ -247,7 +188,7 @@ stpool_task_set_p(struct sttask *ptask, stpool_t *pool)
 		}
 		
 		/**
-		 * We initialize it if the task has not been initialized before 
+		 * We try to deinitialize it if the task has been initialized before 
 		 */
 		if (ptask0->pool && ME_HAS(ptask0->pool, task_deinit)) {
 			ME_CALL(ptask0->pool, task_deinit)(ptask0->pool->ins, ptask0);
@@ -1015,8 +956,8 @@ stpool_resume(stpool_t *pool)
 			"{\"%s\"/%p} resume ... \n",
 			pool->desc, pool);
 
-	assert (ME_HAS(pool, resume));
-	ME_CALL(pool, resume)(pool->ins);
+	if (ME_HAS(pool, resume))
+		ME_CALL(pool, resume)(pool->ins);
 }
 
 EXPORT int  

@@ -135,7 +135,7 @@ cpool_core_thread_status_changel(cpool_core_t *core, thread_t *self, long status
 		 *    .Are there any pending tasks ?  (Optimize, Skip)
 		 */
 		if (!core->nthreads_real_free && !core->n_qths_waked && 
-			core->maxthreads >= core->nthreads_real_pool && core->npendings) 
+			core->maxthreads > core->nthreads_real_pool && core->npendings) 
 			cpool_core_ensure_servicesl(core, self); 		
 	
 #ifndef NDEBUG

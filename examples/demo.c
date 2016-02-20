@@ -64,20 +64,6 @@ void task_reschedule(struct sttask *ptsk) {
 	}
 }
 
-
-long mark_walk(struct sttask *ptask, void *arg) {
-	/** If you want to stop walking the task, you should return -1 */
-	//return -1;
-	
-	/** If you just want to walk the tasks, you should return 0 */
-	//return 0;
-
-	/** Return the marks */
-	return TASK_VMARK_DISABLE_QUEUE |  /** Disable rescheduling */
-		   TASK_VMARK_REMOVE_BYPOOL;   /** Remove the task */
-
-}
-
 int main() 
 {
 	stpool_t *pool;
@@ -138,7 +124,7 @@ int main()
 	/** Attach the destinational pool */
 	error = stpool_task_set_p(ptsk, pool);
 	if (error)
-		printf("***Err: %d(%s). (try eCAP_F_TASK_EX)\n", error, stpool_strerror(error));
+		printf("***Err: %d(%s). (try eCAP_F_CUSTOM_TASK)\n", error, stpool_strerror(error));
 	else {
 		stpool_task_set_userflags(ptsk, 0x1);
 		stpool_task_queue(ptsk);
@@ -209,18 +195,9 @@ int main()
 	printf("\nPress any key to test stoping all tasks fastly.\n");
 	getchar();
 
-#if 0
-	/**
-	 * Remove all pending tasks by calling @stpool_mark_cb,
-	 * We can also call @stpool_remove_all to reach our goal, 
-	 * But we call @stpool_mark_cb here for showing how to use 
-	 * @stpool_mark_cb to do the customed works.
-	 */
-	stpool_mark_cb(pool, mark_walk, NULL);
-#else
 	stpool_throttle_enable(pool, 1);
 	stpool_remove_all(pool, 1);
-#endif
+	
 	/** Wait for all tasks' being done */
 	stpool_wait_all(pool, -1);
 	printf("---------------------------tasks have been finished.\n");
