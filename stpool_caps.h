@@ -16,7 +16,7 @@
  *
  * @note
  * To improve the perfermance of the pool, some features may not be avalible for users, 
- * if user really needs to these features, user should pass their fetures masks to @ref 
+ * if user really needs these features, user should pass their fetures masks to @ref 
  * stpool_create. 
  * 
  * All of the APIs is avalible for user, but if user calls a API without having passed its
@@ -55,8 +55,8 @@ enum {
 	 * All of the tasks must be traceable
 	 *
 	 * Normally, the library ensures that all of the tasks who is in the pending queue will 
-	 * be visiable for users, but If the task is traceable, the library will ensure that all 
-	 * of the tasks will be visiable for users even if some of them are being scheduled or 
+	 * be visitable for users, but If the task is traceable, the library will ensure that all 
+	 * of the tasks will be visitable for users even if some of them are being scheduled or 
 	 * being dispatched.
 	 */
 	eCAP_F_TRACE    = 0x20L,

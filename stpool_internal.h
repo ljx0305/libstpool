@@ -49,7 +49,7 @@ static struct eCAPs_conv_table {
    {"eCAP_F_DISABLEQ",        eCAP_F_DISABLEQ,        eFUNC_F_DISABLEQ},
    {"eCAP_F_REMOVE_BYPOOL",   eCAP_F_REMOVE_BYPOOL,   0},
    {"eCAP_F_ROUTINE",         eCAP_F_ROUTINE,         0},
-   {"eCAP_F_TASK_EX",         eCAP_F_TASK_EX,         eFUNC_F_TASK_EX},
+   {"eCAP_F_CUSTOM_TASK",     eCAP_F_CUSTOM_TASK,     eFUNC_F_TASK_EX},
    {"eCAP_F_TASK_WAIT",       eCAP_F_TASK_WAIT,   	  eFUNC_F_TASK_WAITABLE},
    {"eCAP_F_TASK_WAIT_ALL",   eCAP_F_TASK_WAIT_ALL,   0},
    {"eCAP_F_TASK_WAIT_ANY",   eCAP_F_TASK_WAIT_ANY,   0},

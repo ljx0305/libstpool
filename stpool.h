@@ -450,12 +450,12 @@ struct pool_stat {
 	long randtimeo;              
 	
 	/**
-	 * The peek of the tasks number since the pool is created (-1 = UNKOWN)
+	 * The peek of the tasks number since the pool was created (-1 = UNKOWN)
 	 */
 	unsigned int tasks_peak;     
 
 	/**
-	 * The peek of the threads number since the pool is created.
+	 * The peek of the threads number since the pool was created.
 	 */
 	unsigned int threads_peak;   
 
@@ -591,7 +591,7 @@ EXPORT void  stpool_task_delete(struct sttask *ptask);
  * @param [in] ptask the task object
  * @param [in] pool the destination pool
  *
- * @return if the created pool does not has the feature eCAP_TASK_EX, 
+ * @return if the created pool does not support the customed tasks (see eCAP_F_CUSTOM_TASK), 
  *         it returns POOL_ERR_NSUPPORT, or it returns 0 
  * 
  * @note the task should set its destination pool firstly before its being 
@@ -840,8 +840,8 @@ EXPORT int  stpool_task_wait(struct sttask *ptask, long ms);
  *         @ref POOL_ERR_TIMEDOUT               \n
  *         @ref POOL_ERR_NSUPPORT               \n
  *
- * @note the pool will skip the NULL item of the array, and if
- *       the entry does not contain any items, This API returns 0
+ * @note the NULL item will be skiped, and if the entry does not contain any items, 
+ * 		 This API returns 0
  *
  * @see @ref stpool_wait_all, @stpool_wait_cb
  */
@@ -862,8 +862,8 @@ EXPORT int   stpool_task_wait_all(struct sttask *entry[], int n, long ms);
  *         @ref POOL_ERR_TIMEDOUT             \n
  *         @ref POOL_ERR_NSUPPORT             \n
  *
- * @note the pool will skip the NULL item of the array, and if
- *       the entry does not contain any items, This API returns 0
+ * @note the NULL item will be skiped, and if the entry does not contain any items, 
+ * 		 This API returns 0
  */
 EXPORT int   stpool_task_wait_any(struct sttask *entry[], int n, long ms); 
 
@@ -889,7 +889,7 @@ EXPORT const char *stpool_strerror(int error);
  * Create a task pool
  *
  * @param [in] desc       a const string to describle the pool.
- * @param [in] eCAPs      the neccessary capabilities that the pool must have
+ * @param [in] eCAPs      the neccessary capabilities that the pool must support
  *                        (see stpool_caps.h for more details)
  *
  * @param [in] maxthreads the limited number of working threads who will be 
@@ -933,7 +933,7 @@ EXPORT const char *stpool_strerror(int error);
  * @return the pool object on success, NULL otherwise
  *
  * @note user should call @ref stpool_release to free it if he does not need it any more.
- *       the param \@suspend and \@priq_q_num may be ignored by the pool if the \@eCAPs 
+ *       the param \@suspend and \@priq_q_num may be ignored by the library if the \@eCAPs 
  *       does not contain eCAP_F_SUSPEND and eCAP_F_PRIORITY
  */
 EXPORT stpool_t * stpool_create(const char *desc, long eCAPs, int maxthreads, int minthreads, int suspend, int pri_q_num);
@@ -1080,7 +1080,7 @@ EXPORT void stpool_adjust(stpool_t *pool, int maxthreads, int minthreads);
  *
  * This API is to make sure that the reserved threads number will be equal to the
  * param that we have configured by @ref stpool_adjust, or @ref stpool_adjust_bas
- * absolutly.
+ * absolutly. 
  * 
  * @note @ref stpool_adjust and @stpool_adjust_abs will not kill any threads if its 
  *       settings match the condition listed below. 
@@ -1260,7 +1260,7 @@ EXPORT long stpool_mark_all(stpool_t *pool, long lflags);
  * Mark all tasks existing in the pool currently with specified flags.
  *
  * @ref stpool_mark_all and @ref stpool_mark_cb do essentially the same thing, the only 
- * difference is that @ref stpool_group_mark_cb uses the flags returned by the walk callback 
+ * difference is that @ref stpool_mark_cb uses the flags returned by the walk callback 
  * to mark the tasks.
  *
  * @param [in] pool      the pool object
@@ -1335,9 +1335,9 @@ EXPORT int stpool_throttle_wait(stpool_t *pool, long ms);
 EXPORT int  stpool_wait_all(stpool_t *pool, long ms);
 
 /**
- * Wait for all completions of the tasks existing in the pool in \@ms milliseconds
+ * Wait for all completions of the visiable tasks existing in the pool in \@ms milliseconds
  *
- * This API will visit all of tasks existing in the pool and pass their 
+ * This API will visit all of visitable tasks existing in the pool and pass their 
  * status to the user's walk callback, and if user's walk callback returns
  * a none zero value on them, this API will wait for their completions.
  *
@@ -1350,8 +1350,6 @@ EXPORT int  stpool_wait_all(stpool_t *pool, long ms);
  *                                    \n
  *        @ref POOL_ERR_TIMEDOUT      \n
  *        @ref POOL_ERR_NSUPPORT      \n
- *
- * @note the created pool must have capabilities: eCAP_F_TASK_WAIT
  */
 EXPORT int  stpool_wait_cb(stpool_t *pool, Walk_cb wcb, void *wcb_arg, long ms); 
 

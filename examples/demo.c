@@ -87,9 +87,6 @@ int main()
 					   );
 	if (!pool)
 		abort();
-
-	/** Set the sleep time for the threads (10s + random() % 20s)*/
-	stpool_set_activetimeo(pool, 10, 20);
 	
 	/** Print the status of the pool */
 	printf("@stpool_create(20, 0, 0, 10)\n%s\n", stpool_stat_print(pool));
@@ -108,17 +105,13 @@ int main()
 	stpool_adjust(pool, -280, -4);
 	printf("@stpool_adjust(pool, -280, -4)\n%s\n", stpool_stat_print(pool));
 	
-	printf("\n\nPress any key to test the @stpool_flush ....\n");
-	getchar();
-	stpool_flush(pool);
-	printf("@stpool_flush\n%s\n", stpool_stat_print(pool));
-	
 	/*------------------------------------------------------------------/
 	/----------------Test rescheduling task----------------------------/
 	/------------------------------------------------------------------*/
 	printf("\nPress any key to test rescheduling task. <then press key to stop testing.>\n");
 	getchar();
 	
+	/** We creat a customed task to do the test */
 	ptsk = stpool_task_new(NULL, "test-reschedule", task_reschedule, NULL, &c);
 	
 	/** Attach the destinational pool */
@@ -130,12 +123,12 @@ int main()
 		stpool_task_queue(ptsk);
 		
 		getchar();
+		/** Set the flag to notify the task to exit the rescheduling test */
 		stpool_task_set_userflags(ptsk, 0);
 		stpool_task_wait(ptsk, -1);
 	}
 	stpool_task_delete(ptsk);
 	
-
 	/*-------------------------------------------------------------------/
 	/--------------------Test the throttle------------------------------/
 	/-------------------------------------------------------------------*/
@@ -201,8 +194,14 @@ int main()
 	/** Wait for all tasks' being done */
 	stpool_wait_all(pool, -1);
 	printf("---------------------------tasks have been finished.\n");
+	
+	
+	/*---------------------------------------------------------------/
+	/-------------Release the pool-----------------------------------/
+	/---------------------------------------------------------------*/
+	printf("Press any key to release the pool...\n");
 	getchar();
-
+	
 	/** Release the pool */
 	printf("%s\n", stpool_stat_print(pool));
 	stpool_release(pool);
