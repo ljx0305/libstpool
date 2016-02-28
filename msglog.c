@@ -78,7 +78,7 @@ static int ___log_level =
 #ifndef NDEBUG  
 				LOG_TRACE;
 #else
-				LOG_INFO;
+				LOG_WARN;
 #endif
 
 static msg_log_handler_t *___log_msgh = NULL;

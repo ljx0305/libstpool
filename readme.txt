@@ -4,15 +4,15 @@ WINDOWS:
 	stpool_win_proj (vs2008)
 
 LINUX/MAC
-   ./configure
+   ./configure --prefix=/usr
    make && make install
 
 ARM
-  ./configure --host=cross-complier-
+  ./configure --prefix=install-dir --host=cross-complier-
   make && make install
 
-NDK
-   		./configure --host=cross-complier-
+NDK(android)
+   		./configure --prefix=install-dir --host=cross-complier-
    		make && make install
 
    Or

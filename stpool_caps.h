@@ -95,7 +95,8 @@ enum {
 	 * The pool must support the tasks who is created by users or is created by @ref
 	 * stpool_task_new
 	 */
-	eCAP_F_TASK_EX    = 0x100000L,
+	eCAP_F_CUSTOM_TASK = 0x100000L,
+	#define eCAP_F_TASK_EX eCAP_F_CUSTOM_TASK 
 	
 	/**
 	 * The pool must support @ref stpool_task_wait
@@ -163,7 +164,7 @@ enum {
 	 */
 	eCAP_F_ALL = eCAP_F_DYNAMIC|eCAP_F_FIXED|eCAP_F_PRIORITY|eCAP_F_THROTTLE|
 				 eCAP_F_SUSPEND|eCAP_F_WAIT_ANY|eCAP_F_WAIT_ALL|eCAP_F_WAIT_ANY|eCAP_F_TRACE|
-			     eCAP_F_ROUTINE|eCAP_F_TASK_EX|eCAP_F_TASK_WAIT|eCAP_F_TASK_WAIT_ALL|
+			     eCAP_F_ROUTINE|eCAP_F_CUSTOM_TASK|eCAP_F_TASK_WAIT|eCAP_F_TASK_WAIT_ALL|
 				 eCAP_F_DISABLEQ|eCAP_F_REMOVE_BYPOOL|
 				 eCAP_F_GROUP|eCAP_F_GROUP_THROTTLE|eCAP_F_GROUP_WAIT_ANY|eCAP_F_GROUP_WAIT_ALL|
 				 eCAP_F_GROUP_SUSPEND

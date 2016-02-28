@@ -783,6 +783,8 @@ OSPX_pthread_rwlock_init(OSPX_pthread_rwlock_t *rwlock)
 	int error;
 	
 	memset(rwlock, 0, sizeof(OSPX_pthread_rwlock_t));
+	rwlock->rw_magic = RWMAGIC;
+
 	if ((error = OSPX_pthread_mutex_init(&rwlock->rw_mut, 0)))
 		return error;
 	
@@ -870,7 +872,7 @@ OSPX_pthread_rwlock_wrlock(OSPX_pthread_rwlock_t *rwlock)
 	if (!error)
 		rwlock->rw_ref = -1;
 
-	OSPX_pthread_mutex_lock(&rwlock->rw_mut);
+	OSPX_pthread_mutex_unlock(&rwlock->rw_mut);
 	return error;
 }
 

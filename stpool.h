@@ -48,24 +48,6 @@ enum {
 	 *  to turn the throttle swither on
 	 */
 	POOL_ERR_THROTTLE = 4,
-
-	/**
-	 * The task has been removed by user
-	 *
-	 * It indicates that the task has been removed by one of APIs below: \n
-	 * <pre>
-	 *
-	 * @ref stpool_task_remove 
-	 * @ref stpool_task_mark 
-	 * @ref stpool_remove_all
-	 * @ref stpool_mark_all
-	 * @ref stpool_mark_cb
-	 * @ref stpool_group_remove_all  
-	 * @ref stpool_group_mark_all    
-	 * @ref stpool_group_mark_cb     
-	   </pre>
-	 */
-	POOL_TASK_ERR_REMOVED = 5,				
 		
 	/**
 	 * The operation can not be done since the task is in progress now 
@@ -141,11 +123,6 @@ enum {
 	 * (The errno has been set properly)
 	 */
 	POOL_ERR_errno  = 17,
-
-	/**
-	 * The task is in progress
-	 */
-	POOL_ERR_BUSY = 18,
 };
 
 /** Task error reasons */
@@ -178,7 +155,7 @@ struct sttask {
 	 * The working routine of the task
 	 *
 	 * \@task_run will be called when the task is scheduled by the pool. 
-     *  user can do their works in this function.
+     *  user can do their customed works in this function.
 	 */
 	void (*task_run)(struct sttask *ptask);	
 	
@@ -292,16 +269,6 @@ enum {
 	TASK_VMARK_REMOVE = 0x0008,
 	
 	/**
-	 * The REMOVE mask sets
-	 *
-	 * @note the library will ensure that the REMOVE flags will not be cleared until 
-	 * the user calls the APIs such as @ref stpool_task_queue, @ref stpool_add_routine,
-	 * @ref stpool_clone_add_queue, and @ref stpool_group_add_routine to try to deliver
-	 * the task into the pool's pending queue again.
-	 */
-	TASK_VMARK_REMOVE_FLAGS = TASK_VMARK_REMOVE_BYPOOL|TASK_VMARK_REMOVE,
-	
-	/**
 	 * The task can be added into the pool
 	 *
 	 * @note It is the default value
@@ -313,6 +280,16 @@ enum {
 	 */
 	TASK_VMARK_DISABLE_QUEUE = 0x0040,		
 	
+	/**
+	 * The REMOVE mask sets
+	 *
+	 * @note the library will ensure that the REMOVE flags will not be cleared until 
+	 * the user calls the APIs such as @ref stpool_task_queue, @ref stpool_add_routine,
+	 * @ref stpool_clone_add_queue, and @ref stpool_group_add_routine to try to deliver
+	 * the task into the pool's pending queue again.
+	 */
+	TASK_VMARK_REMOVE_FLAGS = TASK_VMARK_REMOVE_BYPOOL|TASK_VMARK_REMOVE,
+
 	/**
 	 * The mask sets that can be used by users to mark the tasks
 	 *
@@ -534,7 +511,7 @@ EXPORT size_t stpool_task_size();
  * Initialize the task object with the specified parameters
  *
  * @param [in] ptask            the task object needed to be initialized
- * @param [in] pool             the destination pool
+ * @param [in] pool             the destination pool (Can be NULL)
  * @param [in] task_name        a const string to describle the task
  * @param [in] task_run         the task's working routine     (Can not be NULL)
  * @param [in] task_err_handler the task's completion routine  (Can be NULL)
@@ -572,7 +549,7 @@ EXPORT struct sttask *stpool_task_new(stpool_t *pool, const char *task_name,
 /**
  *  Clone a task from the source task object. 
  *
- * 	@param [in] ptask           The source object.
+ * 	@param [in] ptask          The source object.
  * 	@param [in] clone_schattr  Tell the system whether it should clone the task's scheduling attribute or not.
  *
  *  @return a task object On success, NULL otherwise
@@ -737,38 +714,6 @@ EXPORT long  stpool_task_stat2(struct sttask *ptask, long *vm);
 EXPORT int   stpool_task_queue(struct sttask *ptask);
 
 /**
- * Clone a task and deliver it into the pool's pending queue
- *
- * @param [in]      ptask         the source object
- * @param [in]     clone_schattr  if it is none zero, the cloned object will copy the attributes of the source object
- *
- * @param [in,out] ptask2         if \@ptask2 is NULL, the library will call @ref stpool_add_routine to
- *                                deliver this request, or the library will call @ref @stpool_task_new 
- *                                to create a new task object and pass its address to \@ptask2, in this 
- *                                case, user should call @ref stpool_task_delete to free the cloned object
- *                                later.
- *
- * @param [in]     task_arg       if it is not NULL, it will be passed to the cloned object as its task's
- *                                argument, or argument of the source object will be copied.
- *
- * @return  0 on success, error code listed below on error
- *			                                    \n
- *			@ref POOL_ERR_NOMEM                 \n
- *          @ref POOL_ERR_DESTROYING            \n
- *          @ref POOL_ERR_THROTTLE              \n
- *          @ref POOL_TASK_ERR_DESTINATION      \n
- *          @ref POOL_TASK_ERR_DISABLE_QUEUE    \n
- *          @ref POOL_ERR_GROUP_DESTROYING      \n
- *          @ref POOL_ERR_GROUP_THROTTLE        \n
- *          @ref POOL_ERR_NSUPPORT              \n
- *
- * @note  The user flags of the source object will not be copied into the cloned object
- *
- * @see @ref stpool_task_queue, @ref stpool_task_clone
- */
-EXPORT int stpool_task_clone_and_queue(struct sttask *ptask, int clone_schattr, struct sttask **ptask2, void *task_arg);
-
-/**
  * Remove the task
  *
  * @param [in] ptask                the task object needed to be removed
@@ -798,7 +743,7 @@ EXPORT void stpool_task_mark(struct sttask *ptask, long lflags);
  * 	@ref stpool_task_detach will be only allowed to be called in
  * 	the task's working routine or in the task's error handler. 
  * 	Usally a traceable task will be connected with a pool after its 
- * 	having been added into the pool succefully. the task will removed
+ * 	having been added into the pool succefully. the task will be removed
  * 	from the pool if its callback has been done completly, it means 
  * 	that it is not safe to destroy the task object in the task's callback, 
  * 	@stpool_task_detach is designed to resolve this problem, it will force 
@@ -808,7 +753,16 @@ EXPORT void stpool_task_mark(struct sttask *ptask, long lflags);
  * @code example:
  * 	          #define MYTASK_AUTO_FREE 0x1
  *
+ *             void task_run(struct sttask *ptask) {
+ *             	  // TO DO
+ *             	
+ *             	  // Try to free the customed task in its working routine
+ *                // here we just call @task_err_handler to free it directly
+ *                task_err_handler(ptask, 0);
+ *             }
+ *
  * 	           void task_err_handler(struct sttask *ptask, long reasons) {
+ * 	           		// Try to free the customed task in its error handler
  * 	           		if (MYTASK_AUTO_FREE & stpol_get_userflags(ptask)) {
  * 	           			stpool_task_detach(ptask);
  * 	           			stpool_delete_task(ptask);
@@ -921,6 +875,15 @@ EXPORT int   stpool_task_wait_any(struct sttask *entry[], int n, long ms);
  *    y/m/d-version-desc
  */
 EXPORT const char *stpool_version();
+
+/**
+ * Get the description of the error code
+ *
+ * @param [in] error    the error code returned by the library
+ *
+ * @return the const string to describle the error code
+ */
+EXPORT const char *stpool_strerror(int error);
 
 /**
  * Create a task pool
@@ -1096,7 +1059,7 @@ EXPORT void stpool_adjust_abs(stpool_t *pool, int maxthreads, int minthreads);
  * Ajust the the working threads number
  *
  * @ref stpool_adjust is similar to @ref stpool_adjust_abs, the only difference 
- * between them is that the paraments received by @ref stpool_adjust are relative.
+ * between them is that the parameters received by @ref stpool_adjust are relative.
  *
  *    stpool_adjust(pool, 1, 2)  <==> stpool_adjust_abs(
  *    									    pool, 
@@ -1264,15 +1227,14 @@ EXPORT int  stpool_remove_all(stpool_t *pool, int dispatched_by_pool);
  *      .TASK_VMARK_REMOVE
  *            If the task is really in the pending queue, the task will be marked removed, it 
  *         means that if the task is being scheduled or is being dispatched, this flag will has
- *         no effect. if a task is mared with this flag, the function who marks the task will be
- *         responsible for calling its completion routine directly.
+ *         no effect. if a task is marked with this flag, the function who marks the task will be
+ *         responsible for calling its error handler directly.
  *       
  *	    .TASK_VMARK_REMOVE_BYPOOL
- *			  The diference between TASK_VMARK_REMOVE is that the completion routines of the 
- *		  tasks marked with TASK_VMARK_REMOVE will be called by the mark function itself, but
- *		  if the tasks are marked with TASK_VMARK_REMOVE_BYPOOL, the tasks will be removed
- *        from the pending queue and the pool is responsible for calling their completions in
- *        the background.
+ *			  The diference between TASK_VMARK_REMOVE is that the error handlers of the tasks will 
+ *		  be called by the mark function itself, but if the tasks are marked with TASK_VMARK_REMOVE_BYPOOL, 
+ *		  the tasks will be removed from the pending queue and the pool is responsible for calling their 
+ *		  error handlers in the background.
  *
  *	    .TASK_VMARK_DISABLE_QUEUE		
  *	         If the task who has been marked with this flag, POOL_TASK_ERR_DISABLE_QUEUE will 

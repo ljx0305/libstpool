@@ -64,20 +64,6 @@ void task_reschedule(struct sttask *ptsk) {
 	}
 }
 
-
-long mark_walk(struct sttask *ptask, void *arg) {
-	/** If you want to stop walking the task, you should return -1 */
-	//return -1;
-	
-	/** If you just want to walk the tasks, you should return 0 */
-	//return 0;
-
-	/** Return the marks */
-	return TASK_VMARK_DISABLE_QUEUE |  /** Disable rescheduling */
-		   TASK_VMARK_REMOVE_BYPOOL;   /** Remove the task */
-
-}
-
 int main() 
 {
 	stpool_t *pool;
@@ -93,7 +79,7 @@ int main()
 	
 	/** Create a pool */
 	pool = stpool_create("mypool", /** pool name */
-						 eCAPs,    /** capabilites */
+						 eCAPs,    /** neccessary capabilites */
 	                     20,	   /** limited threads number*/
 				          0,	   /** number of threads reserved to waiting for tasks*/
 				          0,	   /** do not suspend the pool */
@@ -133,9 +119,12 @@ int main()
 	printf("\nPress any key to test rescheduling task. <then press key to stop testing.>\n");
 	getchar();
 	
-	ptsk = stpool_task_new(pool, "test-reschedule", task_reschedule, NULL, &c);
-	if (!ptsk) 
-		printf("***Err: @stpool_task_new() returns NULL. (try eCAP_F_TASK_EX)\n");
+	ptsk = stpool_task_new(NULL, "test-reschedule", task_reschedule, NULL, &c);
+	
+	/** Attach the destinational pool */
+	error = stpool_task_set_p(ptsk, pool);
+	if (error)
+		printf("***Err: %d(%s). (try eCAP_F_CUSTOM_TASK)\n", error, stpool_strerror(error));
 	else {
 		stpool_task_set_userflags(ptsk, 0x1);
 		stpool_task_queue(ptsk);
@@ -143,8 +132,9 @@ int main()
 		getchar();
 		stpool_task_set_userflags(ptsk, 0);
 		stpool_task_wait(ptsk, -1);
-		stpool_task_delete(ptsk);
 	}
+	stpool_task_delete(ptsk);
+	
 
 	/*-------------------------------------------------------------------/
 	/--------------------Test the throttle------------------------------/
@@ -174,8 +164,8 @@ int main()
 	stpool_add_routine(pool, "zero-priority", task_run, task_err_handler, &c, NULL);
 		
 	/**
-	 * task("non-zero-priority") be scheduled prior to the @task_run since the it
-	 * has a higher priority.
+	 * task("non-zero-priority") will be scheduled prior to the task("zero-priority") 
+	 * since it has a higher priority.
 	 */
 	stpool_add_routine(pool, "non-zero-priority", task_run, task_err_handler, &c, &attr); 
 	
@@ -205,18 +195,9 @@ int main()
 	printf("\nPress any key to test stoping all tasks fastly.\n");
 	getchar();
 
-#if 0
-	/**
-	 * Remove all pending tasks by calling @stpool_mark_cb,
-	 * We can also call @stpool_remove_all to reach our goal, 
-	 * But we call @stpool_mark_cb here for showing how to use 
-	 * @stpool_mark_cb to do the customed works.
-	 */
-	stpool_mark_cb(pool, mark_walk, NULL);
-#else
 	stpool_throttle_enable(pool, 1);
 	stpool_remove_all(pool, 1);
-#endif
+	
 	/** Wait for all tasks' being done */
 	stpool_wait_all(pool, -1);
 	printf("---------------------------tasks have been finished.\n");

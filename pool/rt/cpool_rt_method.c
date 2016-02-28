@@ -329,7 +329,7 @@ __cpool_rt_task_queue_preprocess(cpool_rt_t *rtp, ctask_t *ptask)
 	 */
 	ptask->f_vmflags &= ~eTASK_VM_F_REMOVE_FLAGS;
 
-	if (CORE_F_creating & cpool_core_statusl(rtp->core)) 
+	if (CORE_F_destroying & cpool_core_statusl(rtp->core)) 
 		return eERR_DESTROYING;
 	
 	if (eTASK_VM_F_DISABLE_QUEUE & ptask->f_vmflags)
@@ -342,7 +342,6 @@ __cpool_rt_task_queue_preprocess(cpool_rt_t *rtp, ctask_t *ptask)
 		ptask->f_stat |= eTASK_STAT_F_WPENDING;
 	else
 		ptask->f_stat = eTASK_STAT_F_WAITING;
-	ptask->f_vmflags &= ~eTASK_VM_F_REMOVE_FLAGS;
 
 	if (rtp->c.priq_num) {
 		assert (rtp->lflags & eFUNC_F_PRIORITY);
@@ -421,7 +420,7 @@ cpool_rt_pri_task_queue(cpool_core_t *core, ctask_t *ptask)
 	cpool_rt_t *rtp = core->priv;
 	
 	/**
-	 * BUGS: If user calls @stpool_task_queue in the Walk functions,
+	 * FIX BUGS: If user calls @stpool_task_queue in the Walk functions,
 	 * it'll take us into crash if the app is linked with the debug library.
 	 */
 	assert (eTASK_VM_F_CACHE & ptask->f_vmflags &&
