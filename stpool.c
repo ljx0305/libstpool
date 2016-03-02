@@ -516,7 +516,7 @@ __stpool_atexit(cpool_com_t *ins, void *opaque)
 EXPORT const char *
 stpool_version() 
 {
-	return "2015/10/12-3.2.0-libstpool-eCAPs";
+	return "2015/10/12-3.2.2-libstpool-eCAPs";
 }
 
 EXPORT const char *

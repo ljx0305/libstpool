@@ -335,6 +335,9 @@ __cpool_rt_task_queue_preprocess(cpool_rt_t *rtp, ctask_t *ptask)
 	if (eTASK_VM_F_DISABLE_QUEUE & ptask->f_vmflags)
 		return eTASK_ERR_DISABLE_QUEUE;
 	
+	if (rtp->throttle_on)
+		return eERR_THROTTLE;
+
 	if (ptask->f_stat) 
 		/**
 		 * If the task is in progress, we try to mark it Re-scheduled
@@ -358,67 +361,6 @@ cpool_rt_task_queue(cpool_core_t *core, ctask_t *ptask)
 	int e, reschedule = 0;
 	cpool_rt_t *rtp = core->priv;
 	
-	assert (eTASK_VM_F_CACHE & ptask->f_vmflags &&
-			(!ptask->f_stat || (eTASK_STAT_F_WAITING|eTASK_STAT_F_SCHEDULING) & ptask->f_stat));
-
-	if (ptask->f_stat) {
-		if (ptask->f_stat & (eTASK_STAT_F_WAITING|eTASK_STAT_F_WPENDING))
-			return 0;
-		reschedule = 1;
-	}
-	
-	/**
-	 * Save the task status
-	 */
-	f_stat = ptask->f_stat;
-	if ((e = __cpool_rt_task_queue_preprocess(rtp, ptask)))
-		return e;
-	
-	if (rtp->lflags & eFUNC_F_DYNAMIC_THREADS) {
-		OSPX_pthread_mutex_lock(&core->mut);
-		if (rtp->throttle_on)
-			e = eERR_THROTTLE;
-
-		else if (!reschedule) {
-			list_add_tail(&ptask->link, &rtp->ready_q);
-			++ core->npendings;
-			
-			if (cpool_core_need_ensure_servicesl(core) && !core->paused)
-				cpool_core_ensure_servicesl(core, NULL);
-		}
-		OSPX_pthread_mutex_unlock(&rtp->core->mut);
-	
-	} else {
-		OSPX_pthread_mutex_lock(&core->mut);
-		if (rtp->throttle_on)
-			e = eERR_THROTTLE;
-
-		else if (!reschedule) {
-			list_add_tail(&ptask->link, &rtp->ready_q);
-			++ core->npendings;	
-			
-			if (cpool_core_waitq_sizel(core) && !core->paused)
-				cpool_core_wakeup_n_sleeping_threadsl(core, 1);
-		}
-		OSPX_pthread_mutex_unlock(&rtp->core->mut);
-	}
-	
-	/**
-	 * We recover the task's status if we fail to deliver the task into the pool
-	 */
-	if (e) 
-		ptask->f_stat = f_stat;
-
-	return e;
-}
-
-int   
-cpool_rt_pri_task_queue(cpool_core_t *core, ctask_t *ptask)
-{
-	uint8_t f_stat;
-	int e, reschedule = 0;
-	cpool_rt_t *rtp = core->priv;
-	
 	/**
 	 * FIX BUGS: If user calls @stpool_task_queue in the Walk functions,
 	 * it'll take us into crash if the app is linked with the debug library.
@@ -436,45 +378,39 @@ cpool_rt_pri_task_queue(cpool_core_t *core, ctask_t *ptask)
 	 * Save the task status
 	 */
 	f_stat = ptask->f_stat;
-	if ((e = __cpool_rt_task_queue_preprocess(rtp, ptask)))
+	if ((e = __cpool_rt_task_queue_preprocess(rtp, ptask))) {
+		/**
+	 	 * We recover the task's status if we fail to deliver the task into the pool
+	     */
+		ptask->f_stat = f_stat;
+		
 		return e;
-	
-	if (rtp->lflags & eFUNC_F_DYNAMIC_THREADS) {
+	}
+		
+	if (!reschedule) {
 		OSPX_pthread_mutex_lock(&core->mut);
-		if (rtp->throttle_on)
-			e = eERR_THROTTLE;
-
-		else if (!reschedule) {
+		/**
+		 * Queue the task 
+		 */
+		if (rtp->lflags & eFUNC_F_PRIORITY)
 			__cpool_com_priq_insert(&rtp->c, ptask);
-			++ core->npendings;
-		  	
+		else
+			list_add_tail(&ptask->link, &rtp->ready_q);
+		++ core->npendings;
+		
+		/**
+		 * Notify the Core to schedule the tasks
+		 */
+		if (rtp->lflags & eFUNC_F_DYNAMIC_THREADS) {
 			if (cpool_core_need_ensure_servicesl(core) && !core->paused)
 				cpool_core_ensure_servicesl(core, NULL);
-		}
-		OSPX_pthread_mutex_unlock(&rtp->core->mut);
-	
-	} else {
-		OSPX_pthread_mutex_lock(&core->mut);
-		if (rtp->throttle_on)
-			e = eERR_THROTTLE;
-
-		else if (!reschedule) {
-			__cpool_com_priq_insert(&rtp->c, ptask);
-			++ core->npendings;	
-			
-			if (cpool_core_waitq_sizel(core) && !core->paused)
-				cpool_core_wakeup_n_sleeping_threadsl(core, 1);
-		}
+		
+		} else if (cpool_core_waitq_sizel(core) && !core->paused)
+			cpool_core_wakeup_n_sleeping_threadsl(core, 1);
 		OSPX_pthread_mutex_unlock(&rtp->core->mut);
 	}
 	
-	/**
-	 * We recover the task's status if we fail to deliver the task into the pool
-	 */
-	if (e) 
-		ptask->f_stat = f_stat;
-
-	return e;
+	return 0;
 }
 
 int   

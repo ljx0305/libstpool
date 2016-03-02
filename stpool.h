@@ -721,7 +721,7 @@ EXPORT int   stpool_task_queue(struct sttask *ptask);
  *                                 (ptask, TASK_VMARK_REMOVE_BYPOOL), or it will call @ref stpool_task_mark 
  *                                 (ptask, TASK_VMARK_REMOVE)
  *
- * @return it returns 0 If the task is free or it really has been removed from the pending queue, or it returs 1.
+ * @return it returns 0 If the task is free now, or it returs 1.
  */
 EXPORT int stpool_task_remove(struct sttask *ptask, int dispatched_by_pool);
 
@@ -756,7 +756,7 @@ EXPORT void stpool_task_mark(struct sttask *ptask, long lflags);
  *             void task_run(struct sttask *ptask) {
  *             	  // TO DO
  *             	
- *             	  // Try to free the customed task in its working routine
+ *             	  // Try to free the customed task in its working routine,
  *                // here we just call @task_err_handler to free it directly
  *                task_err_handler(ptask, 0);
  *             }
@@ -774,7 +774,7 @@ EXPORT void stpool_task_mark(struct sttask *ptask, long lflags);
  * 	           stpool_task_set_userflags(ptask, MYTASK_AUTO_FREE);
  * 	           stpool_task_queue(task);
  * 	           
- * 	           (Here we do not concern about when to free the task object, we just
+ * 	           (Here we do not concern about when to free the customed task object, we just
  * 	            free it in its callback if we do not use it any more)
  * @endcode
  *
@@ -840,7 +840,7 @@ EXPORT int  stpool_task_wait(struct sttask *ptask, long ms);
  *         @ref POOL_ERR_TIMEDOUT               \n
  *         @ref POOL_ERR_NSUPPORT               \n
  *
- * @note the NULL item will be skiped, and if the entry does not contain any items, 
+ * @note the NULL items will be skiped, and if the entry does not contain any items, 
  * 		 This API returns 0
  *
  * @see @ref stpool_wait_all, @stpool_wait_cb
@@ -862,7 +862,7 @@ EXPORT int   stpool_task_wait_all(struct sttask *entry[], int n, long ms);
  *         @ref POOL_ERR_TIMEDOUT             \n
  *         @ref POOL_ERR_NSUPPORT             \n
  *
- * @note the NULL item will be skiped, and if the entry does not contain any items, 
+ * @note the NULL items will be skiped, and if the entry does not contain any items, 
  * 		 This API returns 0
  */
 EXPORT int   stpool_task_wait_any(struct sttask *entry[], int n, long ms); 
@@ -1220,7 +1220,7 @@ EXPORT int  stpool_add_routine(stpool_t *pool,
 EXPORT int  stpool_remove_all(stpool_t *pool, int dispatched_by_pool);
 
 /**
- * Mark the tasks existing in the pool with specified flags
+ * Mark the visitable tasks existing in the pool with specified flags
  *
  * These flags listed below can be used to mark the task by user
  *
@@ -1249,7 +1249,7 @@ EXPORT int  stpool_remove_all(stpool_t *pool, int dispatched_by_pool);
  *    
  * @return the number of tasks effected by the flags 
  *
- * @note if the task is being scheduled or is being dispatched, and it has been marked with
+ * @note if the visitable task is being scheduled or is being dispatched, and it has been marked with
  * \@DO_AGAIN by @ref stpool_task_queue, the mark \@DO_AGAIN will be cleared if the param \@lflags
  * owns TASK_VMARK_REMOVE or TASK_VMARK_REMOVE_BYPOOL. but the task object will not store the
  * REMOVE flags.

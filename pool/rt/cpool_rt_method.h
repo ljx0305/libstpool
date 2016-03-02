@@ -39,7 +39,6 @@ char *cpool_rt_scheduler_map_dump(cpool_core_t *core, char *buff, size_t bufflen
 
 int   cpool_rt_task_init(cpool_core_t *core, ctask_t *ptask);
 int   cpool_rt_task_queue(cpool_core_t *core, ctask_t *ptask);
-int   cpool_rt_pri_task_queue(cpool_core_t *core, ctask_t *ptask);
 int   cpool_rt_task_remove(cpool_core_t *core, ctask_t *ptask, int dispatched_by_pool);
 void  cpool_rt_task_mark(cpool_core_t *core, ctask_t *ptask, long lflags);
 long  cpool_rt_task_stat(cpool_core_t *core, ctask_t *ptask, long *vm);

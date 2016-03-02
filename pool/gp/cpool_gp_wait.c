@@ -463,7 +463,7 @@ __cpool_gp_w_wait_cbl(cpool_gp_t *gpool, int entry_id, long type, Visit_cb cb, v
 
 	do {	
 		/**
-		 * If the pool is being destroying, we show a log message
+		 * If the pool is being destroyed, we show a log message
 		 */
 		if (!(CORE_F_created & cpool_core_statusl(gpool->core))) {
 			if (CORE_F_destroying & cpool_core_statusl(gpool->core)) {

@@ -71,7 +71,7 @@ __cpool_rt_method_init()
 	memcpy(&__dynamic_me,     &__def_me, sizeof(__def_me));
 	memcpy(&__dynamic_pri_me, &__def_me, sizeof(__def_me));
 	
-	__fixed_pri_me.me.task_queue = __dynamic_pri_me.me.task_queue = cpool_rt_pri_task_queue;
+	//__fixed_pri_me.me.task_queue = __dynamic_pri_me.me.task_queue = cpool_rt_pri_task_queue;
 	assert (__fixed_me.extme.throttle_enable);
 }
 
