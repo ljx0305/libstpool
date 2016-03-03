@@ -13,18 +13,18 @@
 #include "cpool_method.h"
 
 /** Basic Method */
-void  cpool_com_atexit(cpool_com_t *ins, void (*__atexit)(cpool_com_t *ins, void *), void *opaque);
-void  cpool_com_adjust(cpool_com_t *ins, int max, int min);
-void  cpool_com_adjust_abs(cpool_com_t *ins, int max, int min);
-int   cpool_com_flush(cpool_com_t *ins);
-void  cpool_com_resume(cpool_com_t *ins);
-long  cpool_com_addref(cpool_com_t *ins);
-long  cpool_com_release(cpool_com_t *ins);
-void  cpool_com_setattr(cpool_com_t *ins, struct thread_attr *attr);
-void  cpool_com_getattr(cpool_com_t *ins, struct thread_attr *attr);
-void  cpool_com_set_activetimeo(cpool_com_t *ins, long acttimeo, long randtimeo);
+void  cpool_com_atexit(cpool_ctx_t ctx, void (*__atexit)(void *), void *opaque);
+void  cpool_com_adjust(cpool_ctx_t ctx, int max, int min);
+void  cpool_com_adjust_abs(cpool_ctx_t ctx, int max, int min);
+int   cpool_com_flush(cpool_ctx_t ctx);
+void  cpool_com_resume(cpool_ctx_t ctx);
+long  cpool_com_addref(cpool_ctx_t ctx);
+long  cpool_com_release(cpool_ctx_t ctx);
+void  cpool_com_setattr(cpool_ctx_t ctx, struct thread_attr *attr);
+void  cpool_com_getattr(cpool_ctx_t ctx, struct thread_attr *attr);
+void  cpool_com_set_activetimeo(cpool_ctx_t ctx, long acttimeo, long randtimeo);
 
-ctask_t *cpool_com_cache_get(cpool_com_t *ins);
-void  cpool_com_cache_put(cpool_com_t *ins, ctask_t *ptask);
+ctask_t *cpool_com_cache_get(cpool_ctx_t ctx);
+void  cpool_com_cache_put(cpool_ctx_t ctx, ctask_t *ptask);
 
 #endif

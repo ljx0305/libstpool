@@ -16,18 +16,13 @@
 
 #define M_POOL "pool"
 
-#define METHOD_HAS(method, func) ((method)->me.func != NULL)
-#define METHOD_EX_HAS(method, func) ((method)->extme.func != NULL)
-#define METHOD_ADV_HAS(method, func) ((method)->advme.func != NULL)
+#define _INVOKABLE0(func, p)  ((p)->me->me.func != NULL)
+#define _INVOKABLE1(func, p)  ((p)->me->extme.func != NULL)
+#define _INVOKABLE2(func, p)  ((p)->me->advme.func != NULL)
 
-#define ME_HAS(p, func)  ((p)->me->me.func != NULL)
-#define ME_CALL(p, func) (p)->me->me.func  
-
-#define ME_EX_HAS(p, func) ((p)->efuncs & eFUNC_F_EXTEND  && ((p)->me->extme.func != NULL))
-#define ME_EX_CALL(p, func) (p)->me->extme.func
-
-#define ME_ADV_HAS(p, func) ((p)->efuncs & eFUNC_F_ADVANCE && ((p)->me->advme.func != NULL))
-#define ME_ADV_CALL(p, func) (p)->me->advme.func
+#define _INVOKE0(func, p, ...) (p)->me->me.func((p)->ins, ##__VA_ARGS__)  
+#define _INVOKE1(func, p, ...) (p)->me->extme.func((p)->ins, ##__VA_ARGS__) 
+#define _INVOKE2(func, p, ...) (p)->me->advme.func((p)->ins, ##__VA_ARGS__) 
 
 #define TASK_CAST_UP(ptsk)    ((struct sttask *)ptsk)
 #define TASK_CAST_DOWN(ptsk)  ((ctask_t *)ptsk)
@@ -93,23 +88,23 @@ __enum_CAPs2(long efuncs, const cpool_method_t *const method, int *nfuncs)
 	if (!(libeCAPs & eCAP_F_DYNAMIC))
 		libeCAPs |= eCAP_F_FIXED;
 	
-	if (METHOD_HAS(method, cache_get))
+	if (method->me.cache_get)
 		libeCAPs |= eCAP_F_ROUTINE;
 	
-	if (METHOD_HAS(method, wait_all))
+	if (method->me.wait_all)
 		libeCAPs |= eCAP_F_WAIT_ALL;
 		
 	if (eFUNC_F_EXTEND & efuncs) {
-		if (METHOD_EX_HAS(method, throttle_enable))
+		if (method->extme.throttle_enable)
 			libeCAPs |= eCAP_F_THROTTLE;
 
-		if (METHOD_EX_HAS(method, wait_any))
+		if (method->extme.wait_any)
 			libeCAPs |= eCAP_F_WAIT_ANY;
 		
-		if (METHOD_EX_HAS(method, wait_any2))
+		if (method->extme.wait_any2)
 			libeCAPs |= eCAP_F_TASK_WAIT_ANY;
 		
-		if (METHOD_EX_HAS(method, task_wait))
+		if (method->extme.task_wait)
 			libeCAPs |= eCAP_F_TASK_WAIT|eCAP_F_WAIT_ALL;
 		
 		if (nfuncs)
@@ -117,20 +112,20 @@ __enum_CAPs2(long efuncs, const cpool_method_t *const method, int *nfuncs)
 	}
 
 	if (eFUNC_F_ADVANCE & efuncs) {
-		if (METHOD_ADV_HAS(method, group_wait_any))
+		if (method->advme.group_wait_any)
 			libeCAPs |= eCAP_F_GROUP_WAIT_ANY;
 		
-		if (METHOD_ADV_HAS(method, group_wait_all))
+		if (method->advme.group_wait_all)
 			libeCAPs |= eCAP_F_GROUP_WAIT_ALL;
 		
-		if (METHOD_ADV_HAS(method, group_throttle_enable))
+		if (method->advme.group_throttle_enable)
 			libeCAPs |= eCAP_F_GROUP_THROTTLE;
 		
-		if (METHOD_ADV_HAS(method, group_suspend))
+		if (method->advme.group_suspend)
 			libeCAPs |= eCAP_F_GROUP_SUSPEND;
 
 		if (nfuncs)
-			*nfuncs += __count_funcs((int *)&method->extme, sizeof(method->advme)/sizeof(void *));
+			*nfuncs += __count_funcs((int *)&method->advme, sizeof(method->advme)/sizeof(void *));
 	}
 
 	return libeCAPs;
@@ -187,8 +182,8 @@ __stpool_task_set_p(ctask_t *ptask, cpool_t *pool)
 	int e;
 	assert (!ptask->ref);
 	
-	if (pool && ME_HAS(pool, task_init) &&
-		(e = ME_CALL(pool, task_init)(pool->ins, ptask)))
+	if (pool && _INVOKABLE0(task_init, pool) &&
+		(e = _INVOKE0(task_init, pool, ptask)))
 		return e;
 
 	ptask->f_vmflags &= ~eTASK_VM_F_DISABLE_QUEUE;
@@ -217,8 +212,8 @@ __stpool_cache_get(stpool_t *pool)
 {
 	ctask_t *ptask = NULL;
 	
-	if (pool && ME_HAS(pool, cache_get)) {
-		if ((ptask = ME_CALL(pool, cache_get)(pool->ins)))
+	if (pool && _INVOKABLE0(cache_get, pool)) {
+		if ((ptask = _INVOKE0(cache_get, pool)))
 			ptask->pool = pool;
 	
 	} else {
@@ -243,8 +238,8 @@ __stpool_cache_get(stpool_t *pool)
 static inline void 
 __stpool_cache_put(stpool_t *pool, ctask_t *ptask)
 {
-	if (pool && ME_HAS(pool, cache_get))
-		ME_CALL(pool, cache_put)(pool->ins, ptask);
+	if (pool && _INVOKABLE0(cache_get, pool))
+		_INVOKE0(cache_put, pool, ptask);
 	else
 		smcache_add_dir(___smc, ptask);
 }

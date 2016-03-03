@@ -78,6 +78,7 @@ __cpool_rt_method_init()
 static void
 __fac_rt_common_dtor(cpool_t *fac_ins)
 {
+	cpool_rt_free_instance(fac_ins->ins);
 	free(fac_ins);
 }
 
@@ -86,8 +87,7 @@ __fac_rt_common_ctor(long efuncs, const cpool_method_t *me,
 	const char *desc, int maxthreads, int minthreads, int pri_q_num, int suspend)
 {
 	int  e;
-	cpool_rt_t *rtp;
-	cpool_t *pool = calloc(1, sizeof(cpool_t) + sizeof(cpool_core_t) + sizeof(cpool_rt_t));
+	cpool_t *pool = calloc(1, sizeof(cpool_t)); 
 
 	if (!pool)
 		return NULL;
@@ -95,20 +95,13 @@ __fac_rt_common_ctor(long efuncs, const cpool_method_t *me,
 	pool->desc = desc;
 	pool->efuncs = efuncs;
 	pool->me  = me;
-	pool->ins = (cpool_core_t *)(pool + 1);
-	pool->destroy = __fac_rt_common_dtor;
+	pool->free = __fac_rt_common_dtor;
 	assert (!(efuncs & eFUNC_F_ADVANCE));
-	
-	/**
-	 * Retreive the memory address of the rt pool and set its core
-	 */
-	rtp = (cpool_rt_t *)(pool->ins + 1);
-	rtp->core = pool->ins;
-	
+		
 	/**
 	 * Create the rt pool instance
 	 */
-	if ((e=cpool_rt_create_instance(rtp, desc, maxthreads, minthreads, pri_q_num, suspend, efuncs))) {
+	if ((e=cpool_rt_create_instance((cpool_rt_t **)&pool->ins, desc, maxthreads, minthreads, pri_q_num, suspend, efuncs))) {
 		MSG_log2(M_RT, LOG_ERR,
 			   "Failed to create rt pool. code(%d)",
 			   e);

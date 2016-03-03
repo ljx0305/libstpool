@@ -28,24 +28,24 @@ cpool_rt_wakeup_throttle_wait(struct WWAKE_requester *r)
 }
 
 void  
-cpool_rt_throttle_ctl(cpool_core_t *core, int on)
+cpool_rt_throttle_ctl(cpool_ctx_t ctx, int on)
 {
-	cpool_rt_t *rtp = core->priv;
+	cpool_rt_t *rtp = ctx;
 	
-	OSPX_pthread_mutex_lock(&core->mut);
+	OSPX_pthread_mutex_lock(&rtp->core->mut);
 	rtp->throttle_on = on;
 	if (!on && rtp->ev_need_notify) {
 		OSPX_pthread_cond_broadcast(rtp->cond_event);
 		rtp->ev_need_notify = 0;
 	}
-	OSPX_pthread_mutex_unlock(&core->mut);
+	OSPX_pthread_mutex_unlock(&rtp->core->mut);
 }
 
 int   
-cpool_rt_throttle_wait(cpool_core_t *core, long ms)
+cpool_rt_throttle_wait(cpool_ctx_t ctx, long ms)
 {
 	int e = 0;
-	cpool_rt_t *rtp = core->priv;
+	cpool_rt_t *rtp = ctx;
 	uint64_t us_clock;
 	
 	DECLARE_WWAKE_REQUEST(r, 
@@ -64,14 +64,14 @@ cpool_rt_throttle_wait(cpool_core_t *core, long ms)
 	 */
 	WWAKE_add(&r);
 	
-	OSPX_pthread_mutex_lock(&core->mut);
+	OSPX_pthread_mutex_lock(&rtp->core->mut);
 	for (;;) {
 		if (!rtp->throttle_on) {
 			e = 0;
 			break;
 		}
 
-		if (CORE_F_destroying & cpool_core_statusl(core)) {
+		if (CORE_F_destroying & cpool_core_statusl(rtp->core)) {
 			e = eERR_DESTROYING;
 			break;
 		}
@@ -96,7 +96,7 @@ cpool_rt_throttle_wait(cpool_core_t *core, long ms)
 
 		rtp->ev_need_notify = 1;
 		++ rtp->ev_wref; 
-		OSPX_pthread_cond_timedwait(rtp->cond_event, &core->mut, ms);
+		OSPX_pthread_cond_timedwait(rtp->cond_event, &rtp->core->mut, ms);
 		-- rtp->ev_wref; 
 		
 		/**
@@ -107,7 +107,7 @@ cpool_rt_throttle_wait(cpool_core_t *core, long ms)
 			OSPX_pthread_cond_broadcast(rtp->cond_sync);
 		}
 	}
-	OSPX_pthread_mutex_unlock(&core->mut);
+	OSPX_pthread_mutex_unlock(&rtp->core->mut);
 	WWAKE_erase_direct(&r);
 
 	return e;

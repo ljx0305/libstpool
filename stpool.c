@@ -75,8 +75,8 @@ stpool_task_deinit(struct sttask *ptask)
 {
 	cpool_t *pool = TASK_CAST_DOWN(ptask)->pool;
 
-	if (pool && ME_HAS(pool, task_deinit))
-		ME_CALL(pool, task_deinit)(pool->ins, TASK_CAST_DOWN(ptask));
+	if (pool && _INVOKABLE0(task_deinit, pool))
+		_INVOKE0(task_deinit, pool, TASK_CAST_DOWN(ptask));
 }
 
 EXPORT struct sttask *
@@ -144,11 +144,11 @@ stpool_task_delete(struct sttask *ptask)
 		
 		assert (pool);
 		if (TASK_CAST_DOWN(ptask)->f_stat || 
-			(!ME_EX_HAS(pool, task_wsync) || ME_EX_CALL(pool, task_wsync)(pool->ins, ptask0))) {
+			(!_INVOKABLE1(task_wsync, pool) || _INVOKE1(task_wsync, pool, ptask0))) {
 			MSG_log(M_POOL, LOG_ERR,
 				"It is not safe to destroy the task now. task(%s/%p) ref(%hhd) code(%d) stat:%p\n",
 				ptask0->task_desc, ptask0, ptask0->ref, ptask0->task_code, 
-				pool ? ME_CALL(pool, task_stat)(pool->ins, ptask0, NULL) : ptask0->f_stat);
+				pool ? _INVOKE0(task_stat, pool, ptask0, NULL) : ptask0->f_stat);
 		}
 		assert (!ptask0->ref);
 	}
@@ -170,17 +170,17 @@ stpool_task_set_p(struct sttask *ptask, stpool_t *pool)
 				MSG_log(M_POOL, LOG_WARN,
 						"@%s:Task(%s/%p) is in progress. ref(%hhd) stat(%p)\n",
 						__FUNCTION__, ptask0->task_desc, ptask0, ptask0->ref, 
-						pool ? ME_CALL(pool, task_stat)(pool->ins, ptask0, NULL) : (long)NULL);
+						pool ? _INVOKE0(task_stat, pool, ptask0, NULL) : (long)NULL);
 				
 				return POOL_TASK_ERR_BUSY;
 			} 
 					
-			if (!ME_EX_HAS(pool, task_wsync) || (e = ME_EX_CALL(pool, task_wsync)(pool->ins, ptask0))) {
+			if (!_INVOKABLE1(task_wsync, pool) || (e = _INVOKE1(task_wsync, pool, ptask0))) {
 				MSG_log(M_POOL, LOG_WARN,
 					"It is not safe to change the task's pool since its reference "
 					"is not zero. task(%s/%p) ref(%hhd) stat(%p)\n",
 					ptask->task_name, ptask, ptask0->ref, 
-					ME_CALL(pool, task_stat)(pool->ins, ptask0, NULL));
+					_INVOKE0(task_stat, pool, ptask0, NULL));
 
 				return __stpool_liberror(e);
 			}
@@ -190,8 +190,8 @@ stpool_task_set_p(struct sttask *ptask, stpool_t *pool)
 		/**
 		 * We try to deinitialize it if the task has been initialized before 
 		 */
-		if (ptask0->pool && ME_HAS(ptask0->pool, task_deinit)) {
-			ME_CALL(ptask0->pool, task_deinit)(ptask0->pool->ins, ptask0);
+		if (ptask0->pool && _INVOKABLE0(task_deinit, ptask0->pool)) {
+			_INVOKE0(task_deinit, ptask0->pool, ptask0);
 			ptask0->pool = NULL;
 		}
 
@@ -291,7 +291,7 @@ stpool_task_queue(struct sttask *ptask)
 	if (!pool)
 		return POOL_TASK_ERR_DESTINATION;
 	
-	if ((e=ME_CALL(pool, task_queue)(pool->ins, TASK_CAST_DOWN(ptask))))
+	if ((e=_INVOKE0(task_queue, pool, TASK_CAST_DOWN(ptask))))
 		return __stpool_liberror(e);
 	
 	return 0;
@@ -305,11 +305,11 @@ stpool_task_remove(struct sttask *ptask, int dispatched_by_pool)
 	if (!pool || !TASK_CAST_DOWN(ptask)->f_stat)
 		return 0;
 	
-	if (ME_HAS(pool, task_remove))
-		return ME_CALL(pool, task_remove)(pool->ins, TASK_CAST_DOWN(ptask), dispatched_by_pool);
+	if (_INVOKABLE0(task_remove, pool))
+		return _INVOKE0(task_remove, pool, TASK_CAST_DOWN(ptask), dispatched_by_pool);
 
-	if (ME_HAS(pool, task_mark))
-		ME_CALL(pool, task_mark)(pool->ins, TASK_CAST_DOWN(ptask), dispatched_by_pool ? 
+	if (_INVOKABLE0(task_mark, pool))
+		_INVOKE0(task_mark, pool, TASK_CAST_DOWN(ptask), dispatched_by_pool ? 
 					TASK_VMARK_REMOVE_BYPOOL : TASK_VMARK_REMOVE);
 	
 	return TASK_CAST_DOWN(ptask)->f_stat ? 0 : 1;
@@ -324,8 +324,8 @@ stpool_task_detach(struct sttask *ptask)
 {
 	cpool_t *pool = TASK_CAST_DOWN(ptask)->pool;
 
-	if (ME_HAS(pool, task_detach))
-		ME_CALL(pool, task_detach)(pool->ins, TASK_CAST_DOWN(ptask));
+	if (_INVOKABLE0(task_detach, pool))
+		_INVOKE0(task_detach, pool, TASK_CAST_DOWN(ptask));
 }
 
 EXPORT void
@@ -333,8 +333,8 @@ stpool_task_mark(struct sttask *ptask, long lflags)
 {	
 	cpool_t *pool = TASK_CAST_DOWN(ptask)->pool;
 
-	if (pool && ME_HAS(pool, task_mark))
-		ME_CALL(pool, task_mark)(pool->ins, TASK_CAST_DOWN(ptask), lflags);
+	if (pool && _INVOKABLE0(task_mark, pool))
+		_INVOKE0(task_mark, pool, TASK_CAST_DOWN(ptask), lflags);
 }
 
 EXPORT int  
@@ -361,10 +361,10 @@ stpool_task_wait(struct sttask *ptask, long ms)
 	if (!pool || !TASK_CAST_DOWN(ptask)->f_stat)
 		return 0;
 
-	if (!ME_EX_HAS(pool, task_wait))
+	if (!_INVOKABLE1(task_wait, pool))
 		return POOL_ERR_NSUPPORT;
 	
-	if ((e=ME_EX_CALL(pool, task_wait)(pool->ins, TASK_CAST_DOWN(ptask), ms)))
+	if ((e=_INVOKE1(task_wait, pool, TASK_CAST_DOWN(ptask), ms)))
 		return __stpool_liberror(e);
 	
 	return 0;
@@ -437,10 +437,10 @@ stpool_task_wait_any(struct sttask *entry[], int n, long ms)
 	if (!pool)
 		return 0;
 
-	if (!ME_EX_HAS(pool, wait_any2))
+	if (!_INVOKABLE1(wait_any2, pool))
 		return POOL_ERR_NSUPPORT;
 	
-	if ((e=ME_EX_CALL(pool, wait_any2)(pool->ins, (ctask_t **)entry, n, ms)))
+	if ((e=_INVOKE1(wait_any2, pool, (ctask_t **)entry, n, ms)))
 		return __stpool_liberror(e);
 	
 	return 0;
@@ -488,7 +488,7 @@ stpool_task_stat2(struct sttask *ptask, long *vm)
 		return 0;
 	}
 		
-	stat = ME_CALL(pool, task_stat)(pool->ins, ptask0, vm);
+	stat = _INVOKE0(task_stat, pool, ptask0, vm);
 	if (vm)
 		*vm &= (eTASK_VM_F_REMOVE_FLAGS|eTASK_VM_F_DISABLE_QUEUE|eTASK_VM_F_ENABLE_QUEUE);
 	
@@ -506,11 +506,11 @@ stpool_task_is_free(struct sttask *ptask)
 /*****************************Interfaces about the pool *****************************/
 /************************************************************************************/
 static void
-__stpool_atexit(cpool_com_t *ins, void *opaque) 
+__lib_regist_atexit(void *opaque) 
 {
 	cpool_t *pool = opaque;
 	
-	pool->destroy(pool);
+	pool->free(pool);
 }
 
 EXPORT const char *
@@ -626,16 +626,18 @@ stpool_create(const char *desc, long eCAPs, int maxthreads, int minthreads, int 
 				"Factory(\"%s\" scores(%d) nfuns(%d)) try to service us. lib_eCAPs(%p) user_eCAPs(%p)\n",
 				fac_sel[idx].fac_desc, fac_sel[idx].fac->scores, fac_sel[idx].nfuncs, fac_sel[idx].eCAPs, eCAPs);
 
-		if ((pool = fac_sel[idx].fac->create(desc, maxthreads, minthreads, pri_q_num, suspend))) 
+		if ((pool = fac_sel[idx].fac->create(desc, maxthreads, minthreads, pri_q_num, suspend))) {
+			assert (pool->me && pool->ins);
 			break;
+		}
 
 		MSG_log2(M_POOL, LOG_ERR,
 			"Failed to create the pool: Factory(\"%s\"/%p).",
 			fac_sel[idx].fac_desc, fac_sel[idx].fac);
 	}
 
-	if (idx != sel_idx && ME_HAS(pool, atexit))
-		ME_CALL(pool, atexit)(pool->ins, __stpool_atexit, pool);
+	if (idx != sel_idx) 
+		_INVOKE0(atexit, pool, __lib_regist_atexit, pool);
 
 	return pool;
 }
@@ -657,7 +659,7 @@ stpool_thread_setscheattr(stpool_t *pool, struct stpool_thattr *attr)
 {
 	struct thread_attr attr0 = {0};
 
-	if (ME_HAS(pool, setattr)) {
+	if (_INVOKABLE0(setattr, pool)) {
 		/**
 	 	 * Convert the libray attributs into the inner attributes
 	 	 */
@@ -665,7 +667,7 @@ stpool_thread_setscheattr(stpool_t *pool, struct stpool_thattr *attr)
 		
 		memcpy(attr, &attr0, sizeof(*attr));
 
-		ME_CALL(pool, setattr)(pool->ins, &attr0);
+		_INVOKE0(setattr, pool, &attr0);
 	}
 }
 
@@ -674,8 +676,8 @@ stpool_thread_getscheattr(stpool_t *pool, struct stpool_thattr *attr)
 {	
 	struct thread_attr attr0 = {0};
 
-	if (ME_HAS(pool, getattr))
-		ME_CALL(pool, getattr)(pool->ins, &attr0);
+	if (_INVOKABLE0(getattr, pool))
+		_INVOKE0(getattr, pool, &attr0);
 
 	/**
 	 * Convert the attributs into the library attributes
@@ -689,9 +691,9 @@ stpool_thread_getscheattr(stpool_t *pool, struct stpool_thattr *attr)
 EXPORT long 
 stpool_addref(stpool_t *pool) 
 {	
-	assert (ME_HAS(pool, addref));
+	assert (_INVOKABLE0(addref, pool));
 	
-	return ME_CALL(pool, addref)(pool->ins);
+	return _INVOKE0(addref, pool);
 }
 
 EXPORT long 
@@ -699,9 +701,9 @@ stpool_release(stpool_t *pool)
 {
 	long ref;
 	
-	assert (ME_HAS(pool, release));
+	assert (_INVOKABLE0(release, pool));
 
-	if (!(ref = ME_CALL(pool, release)(pool->ins)) && ___smc) 
+	if (!(ref = _INVOKE0(release, pool)) && ___smc) 
 		smcache_flush(___smc, 1);
 
 	return ref;
@@ -710,31 +712,31 @@ stpool_release(stpool_t *pool)
 EXPORT void 
 stpool_set_activetimeo(stpool_t *pool, long acttimeo, long randtimeo) 
 {
-	if (ME_HAS(pool, set_activetimeo))
-		ME_CALL(pool, set_activetimeo)(pool->ins, acttimeo, randtimeo);
+	if (_INVOKABLE0(set_activetimeo, pool))
+		_INVOKE0(set_activetimeo, pool, acttimeo, randtimeo);
 }
 
 EXPORT void 
 stpool_adjust_abs(stpool_t *pool, int maxthreads, int minthreads) 
 {
-	assert (ME_HAS(pool, adjust_abs));
-	ME_CALL(pool, adjust_abs)(pool->ins, maxthreads, minthreads);
+	assert (_INVOKABLE0(adjust_abs, pool));
+	_INVOKE0(adjust_abs, pool, maxthreads, minthreads);
 }
 
 EXPORT void 
 stpool_adjust(stpool_t *pool, int maxthreads, int minthreads) 
 {
-	assert (ME_HAS(pool, adjust));
-	ME_CALL(pool, adjust)(pool->ins, maxthreads, minthreads);
+	assert (_INVOKABLE0(adjust, pool));
+	_INVOKE0(adjust, pool, maxthreads, minthreads);
 }
 
 EXPORT int
 stpool_flush(stpool_t *pool) 
 {
-	if (!ME_HAS(pool, flush))	
+	if (!_INVOKABLE0(flush, pool))	
 		return 0;
 
-	return ME_CALL(pool, flush)(pool->ins);
+	return _INVOKE0(flush, pool);
 }
 
 EXPORT struct pool_stat *
@@ -743,8 +745,8 @@ stpool_stat(stpool_t *pool, struct pool_stat *stat)
 	static struct pool_stat __stat;
 	struct cpool_stat stat0 = {0};
 
-	assert (ME_HAS(pool, stat));
-	ME_CALL(pool, stat)(pool->ins, &stat0);
+	assert (_INVOKABLE0(stat, pool));
+	_INVOKE0(stat, pool, &stat0);
 	if (!stat)
 		stat = &__stat;
 	
@@ -838,10 +840,10 @@ stpool_stat_print2(struct pool_stat *stat, char *buffer, size_t bufferlen)
 EXPORT char *
 stpool_scheduler_map_dump2(stpool_t *pool, char *buffer, int len)
 {
-	if (!ME_HAS(pool, scheduler_map_dump))
+	if (!_INVOKABLE0(scheduler_map_dump, pool))
 		return NULL;
 	
-	return ME_CALL(pool, scheduler_map_dump)(pool->ins, buffer, len);
+	return _INVOKE0(scheduler_map_dump, pool, buffer, len);
 }
 
 EXPORT int  
@@ -885,22 +887,22 @@ stpool_mark_all(stpool_t *pool, long lflags)
 			"{\"%s\"/%p} Marking all tasks with %p ...\n",
 			pool->desc, pool, lflags);
 	
-	if (!ME_HAS(pool, mark_all)) {
-		if (ME_HAS(pool, remove_all) && TASK_VMARK_REMOVE & lflags) 
-			return ME_CALL(pool, remove_all)(pool->ins, lflags & TASK_VMARK_REMOVE_BYPOOL);
+	if (!_INVOKABLE0(mark_all, pool)) {
+		if (_INVOKABLE0(remove_all, pool) && TASK_VMARK_REMOVE & lflags) 
+			return _INVOKE0(remove_all, pool, lflags & TASK_VMARK_REMOVE_BYPOOL);
 		return 0;
 	}
 	
-	return ME_CALL(pool, mark_all)(pool->ins, lflags);
+	return _INVOKE0(mark_all, pool, lflags);
 }
 
 EXPORT int  
 stpool_mark_cb(stpool_t *pool, Walk_cb wcb, void *wcb_arg)
 {
-	if (!ME_HAS(pool, mark_cb))
+	if (!_INVOKABLE0(mark_cb, pool))
 		return 0;
 	
-	return ME_CALL(pool, mark_cb)(pool->ins, (Visit_cb)wcb, wcb_arg);
+	return _INVOKE0(mark_cb, pool, (Visit_cb)wcb, wcb_arg);
 }
 	
 EXPORT int
@@ -910,10 +912,10 @@ stpool_throttle_enable(stpool_t *pool, int enable)
 			"{\"%s\"/%p} %s the throttle ...\n",
 			pool->desc, pool, enable ? "ENABLING" : "DISABLING");
 	
-	if (!ME_EX_HAS(pool, throttle_enable)) 
+	if (!_INVOKABLE1(throttle_enable, pool)) 
 		return POOL_ERR_NSUPPORT;
 	
-	ME_EX_CALL(pool, throttle_enable)(pool->ins, enable);
+	_INVOKE1(throttle_enable, pool, enable);
 	return 0;
 }
 
@@ -922,10 +924,10 @@ stpool_throttle_wait(stpool_t *pool, long ms)
 {
 	int e;
 
-	if (!ME_EX_HAS(pool, throttle_wait))
+	if (!_INVOKABLE1(throttle_wait, pool))
 		return 0;
 	
-	if ((e = ME_EX_CALL(pool, throttle_wait)(pool->ins, ms)))
+	if ((e = _INVOKE1(throttle_wait, pool, ms)))
 		e = __stpool_liberror(e);
 	
 	return e;
@@ -940,10 +942,10 @@ stpool_suspend(stpool_t *pool, long ms)
 			"{\"%s\"/%p} suspend ... (%ld ms)\n",
 			pool->desc, pool, ms);
 
-	if (!ME_HAS(pool, suspend))
+	if (!_INVOKABLE0(suspend, pool))
 		return POOL_ERR_NSUPPORT;
 
-	if ((e=ME_CALL(pool, suspend)(pool->ins, ms)))
+	if ((e=_INVOKE0(suspend, pool, ms)))
 		return __stpool_liberror(e);
 	
 	return 0;
@@ -956,8 +958,8 @@ stpool_resume(stpool_t *pool)
 			"{\"%s\"/%p} resume ... \n",
 			pool->desc, pool);
 
-	if (ME_HAS(pool, resume))
-		ME_CALL(pool, resume)(pool->ins);
+	if (_INVOKABLE0(resume, pool))
+		_INVOKE0(resume, pool);
 }
 
 EXPORT int  
@@ -967,10 +969,10 @@ stpool_remove_all(stpool_t *pool, int dispatched_by_pool)
 			"{\"%s\"/%p} remove all tasks ... (%d)\n",
 			pool->desc, pool, dispatched_by_pool);
 
-	if (!ME_HAS(pool, remove_all))
+	if (!_INVOKABLE0(remove_all, pool))
 		return 0;
 	
-	return ME_CALL(pool, remove_all)(pool->ins, dispatched_by_pool);
+	return _INVOKE0(remove_all, pool, dispatched_by_pool);
 }
 
 EXPORT long 
@@ -987,10 +989,10 @@ stpool_wait_all(stpool_t * pool, long ms)
 			"{\"%s\"/%p} start waiting for all tasks's being done ... (%ld ms)\n",
 			pool->desc, pool, ms);
 
-	if (!ME_HAS(pool, wait_all))
+	if (!_INVOKABLE0(wait_all, pool))
 		return POOL_ERR_NSUPPORT;
 	
-	if ((e = ME_CALL(pool, wait_all)(pool->ins, ms)))
+	if ((e = _INVOKE0(wait_all, pool, ms)))
 		e = __stpool_liberror(e);
 	
 	return e;
@@ -1001,10 +1003,10 @@ stpool_wait_cb(stpool_t *pool, Walk_cb wcb, void *wcb_arg, long ms)
 {
 	int e;
 
-	if (!ME_EX_HAS(pool, wait_cb))
+	if (!_INVOKABLE1(wait_cb, pool))
 		return POOL_ERR_NSUPPORT;
 	
-	if ((e = ME_EX_CALL(pool, wait_cb)(pool->ins, (Visit_cb)wcb, wcb_arg, ms)))
+	if ((e = _INVOKE1(wait_cb, pool, (Visit_cb)wcb, wcb_arg, ms)))
 		e = __stpool_liberror(e);
 	
 	return e;
@@ -1015,10 +1017,10 @@ stpool_wait_any(stpool_t *pool, long ms)
 {
 	int e;
 
-	if (!ME_EX_HAS(pool, wait_any))
+	if (!_INVOKABLE1(wait_any, pool))
 		return POOL_ERR_NSUPPORT;
 	
-	if ((e = ME_EX_CALL(pool, wait_any)(pool->ins, ms)))
+	if ((e = _INVOKE1(wait_any, pool, ms)))
 		e = __stpool_liberror(e);
 	
 	return e;

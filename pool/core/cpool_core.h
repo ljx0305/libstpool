@@ -30,8 +30,8 @@ void VERIFY(cpool_core_t *core, thread_t *self);
 /***************************Interfaces about the Core ******************************/
 int  cpool_core_ctor(cpool_core_t *core, const char *desc, const cpool_core_method_t *const me, 
 					int maxthreads, int minthreads, int suspend, long lflags); 
-void cpool_core_atexit(cpool_core_t *core, void (*atexit_func)(cpool_core_t *core, void *arg), void *arg);
-void cpool_core_free(cpool_core_t *core);
+void cpool_core_atexit(cpool_core_t *core, void (*atexit_func)(void *arg), void *arg);
+void cpool_core_dtor(cpool_core_t *core);
 
 static inline long cpool_core_addrefl(cpool_core_t *core, int increase_user) 
 {
@@ -123,7 +123,7 @@ static inline void cpool_core_event_free_try_notifyl(cpool_core_t *core)
 	if (cpool_core_all_donel(core) && !core->event_free_notified) {
 		core->event_free_notified = 1;
 		if (core->me->notifyl) 
-			core->me->notifyl(core, eEvent_F_free);
+			core->me->notifyl(core->priv, eEvent_F_free);
 	}
 }
 

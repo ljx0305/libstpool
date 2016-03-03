@@ -74,12 +74,12 @@ typedef struct cpool_core_method {
 	const char * desc;
 	const size_t task_size;
 	
-	int    (*ctor)(cpool_core_t *core);
-	void   (*notifyl)(cpool_core_t  *core, eEvent_t events);
-	int    (*gettask)(cpool_core_t  *core, thread_t *self);
+	int    (*ctor)(void *priv);
+	void   (*notifyl)(void *priv, eEvent_t events);
+	int    (*gettask)(void *priv, thread_t *self);
 	long   (*err_reasons)(basic_task_t *ptask);
-	void   (*finished)(cpool_core_t *core, thread_t *self, basic_task_t *ptask, long eReasons);
-	void   (*dtor)(cpool_core_t *core);
+	void   (*finished)(void *priv, thread_t *self, basic_task_t *ptask, long eReasons);
+	void   (*dtor)(void *priv);
 } cpool_core_method_t;
 
 /** Status of the working threads */
@@ -263,7 +263,7 @@ struct cpool_core {
 	 */
 	long ref, user_ref;
 	time_t tpool_created;
-	void (*atexit)(cpool_core_t *, void *);
+	void (*atexit)(void *);
 	void *atexit_arg;
 	
 	/** timeo */

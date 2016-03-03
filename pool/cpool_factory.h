@@ -758,14 +758,14 @@ struct cpool {
 	/**
 	 * The instance object created by the factory
 	 */
-	cpool_com_t *ins;	
+	cpool_ctx_t ins;	
 	
 	/**
 	 * The interface to destroy the instance object
 	 *
 	 * \@destroy should be called by user to free the pool object if it is useless. 
 	 */
-	void (*destroy)(cpool_t *fac_ins);
+	void (*free)(cpool_t *fac_ins);
 }; 
 
 /** The definition of the pool factory */

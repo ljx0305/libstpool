@@ -100,9 +100,9 @@ __cpool_rt_task_dispatch(cpool_rt_t *rtp, struct list_head *rmq, int dispatched_
 			 */
 			if (eTASK_STAT_F_WPENDING & ptask->f_stat) {
 				if (rtp->lflags & eFUNC_F_PRIORITY)
-					__cpool_rt_pri_task_queue(rtp->core, ptask);
+					__cpool_rt_pri_task_queue(rtp, ptask);
 				else
-					__cpool_rt_task_queue(rtp->core, ptask);
+					__cpool_rt_task_queue(rtp, ptask);
 				
 				++ task_counter;
 			} else
