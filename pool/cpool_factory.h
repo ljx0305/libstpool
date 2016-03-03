@@ -758,7 +758,7 @@ struct cpool {
 	/**
 	 * The instance object created by the factory
 	 */
-	cpool_ctx_t ins;	
+	cpool_ctx_t ctx;	
 	
 	/**
 	 * The interface to destroy the instance object

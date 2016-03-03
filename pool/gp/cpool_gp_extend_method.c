@@ -92,7 +92,7 @@ cpool_gp_task_wait(cpool_ctx_t ctx, ctask_t *ptask, long ms)
 	if (!ptask->f_stat)
 		return 0;
 
-	assert (ctx == ptask->pool->ins);
+	assert (ctx == ptask->pool->ctx);
 	if (!ms)
 		return eERR_TIMEDOUT;
 
@@ -119,7 +119,7 @@ cpool_gp_task_wait_any(cpool_ctx_t ctx, ctask_t *entry[], int n, long ms)
 		/**
 		 * The destionation pool of the task must be equal to the Core
 		 */
-		if (!entry[idx]->pool || entry[idx]->pool->ins != ctx)
+		if (!entry[idx]->pool || entry[idx]->pool->ctx != ctx)
 			return eTASK_ERR_DESTINATION;
 		/**
 		 * If there are any tasks who is free now, we return 0 imediately 

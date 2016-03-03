@@ -79,7 +79,7 @@ int __cpool_gp_w_waitl(cpool_gp_t *gpool, long type, int entry_id, void *arg, lo
 			(p)->tsk_any_wait = 0; \
 			while ((p)->entry_idx) { \
 				-- (p)->entry_idx; \
-				if ((p)->glbentry[(p)->entry_idx]->pool->ins == (void *)(p)) \
+				if ((p)->glbentry[(p)->entry_idx]->pool->ctx == (void *)(p)) \
 					(p)->glbentry[(p)->entry_idx]->f_global_wait = 0; \
 			} \
 			OSPX_pthread_cond_broadcast(&(p)->cond_task);\

@@ -443,7 +443,7 @@ cpool_rt_task_remove(cpool_ctx_t ctx, ctask_t *ptask, int dispatched_by_pool)
 	 * This interface is only be allowed to be called in the ctask_t::task_run
 	 * or in the ctask_t::task_err_handler.
 	 */
-	assert (ptask->pool && ptask->f_stat && ptask->pool->ins == ctx &&
+	assert (ptask->pool && ptask->f_stat && ptask->pool->ctx == ctx &&
 			eTASK_STAT_F_SCHEDULING & ptask->f_stat);
 	
 	ptask->f_stat &= ~eTASK_STAT_F_WPENDING;
@@ -457,7 +457,7 @@ cpool_rt_task_mark(cpool_ctx_t ctx, ctask_t *ptask, long lflags)
 	 * This interface is only be allowed to be called in the ctask_t::task_run
 	 * or in the ctask_t::task_err_handler.
 	 */
-	assert (ptask->pool && ptask->f_stat && ptask->pool->ins == ctx &&
+	assert (ptask->pool && ptask->f_stat && ptask->pool->ctx == ctx &&
 			eTASK_STAT_F_SCHEDULING & ptask->f_stat);
 
 	lflags &= eTASK_VM_F_USER_FLAGS;
@@ -475,7 +475,7 @@ cpool_rt_task_stat(cpool_ctx_t ctx, ctask_t *ptask, long *vm)
 	 * This interface is only be allowed to be called in the ctask_t::task_run
 	 * or in the ctask_t::task_err_handler.
 	 */
-	assert (ptask->pool && ptask->f_stat && ptask->pool->ins == ctx &&
+	assert (ptask->pool && ptask->f_stat && ptask->pool->ctx == ctx &&
 			eTASK_STAT_F_SCHEDULING & ptask->f_stat);
 	
 	if (vm) 

@@ -184,7 +184,7 @@ cpool_gp_task_remove(cpool_ctx_t ctx, ctask_t *ptask, int dispatched_by_pool)
 	LIST_HEAD(rmq);
 	struct list_head *q = &rmq;
 
-	assert (ptask->pool && ptask->pool->ins == ctx);
+	assert (ptask->pool && ptask->pool->ctx == ctx);
 	
 	if (!ptask->f_stat)
 		return 0;
@@ -375,7 +375,7 @@ cpool_gp_task_stat(cpool_ctx_t ctx, ctask_t *ptask, long *vm)
 	long f_stat = 0, f_vm = 0, entry_stat = 0;
 	cpool_gp_t *gpool = ctx;
 	
-	assert (ptask->pool && ptask->pool->ins == ctx);
+	assert (ptask->pool && ptask->pool->ctx == ctx);
 
 	/**
 	 * Check the group id and the task's status

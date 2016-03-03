@@ -627,7 +627,7 @@ stpool_create(const char *desc, long eCAPs, int maxthreads, int minthreads, int 
 				fac_sel[idx].fac_desc, fac_sel[idx].fac->scores, fac_sel[idx].nfuncs, fac_sel[idx].eCAPs, eCAPs);
 
 		if ((pool = fac_sel[idx].fac->create(desc, maxthreads, minthreads, pri_q_num, suspend))) {
-			assert (pool->me && pool->ins);
+			assert (pool->me && pool->ctx);
 			break;
 		}
 

@@ -20,9 +20,9 @@
 #define _INVOKABLE1(func, p)  ((p)->me->extme.func != NULL)
 #define _INVOKABLE2(func, p)  ((p)->me->advme.func != NULL)
 
-#define _INVOKE0(func, p, ...) (p)->me->me.func((p)->ins, ##__VA_ARGS__)  
-#define _INVOKE1(func, p, ...) (p)->me->extme.func((p)->ins, ##__VA_ARGS__) 
-#define _INVOKE2(func, p, ...) (p)->me->advme.func((p)->ins, ##__VA_ARGS__) 
+#define _INVOKE0(func, p, ...) (p)->me->me.func((p)->ctx, ##__VA_ARGS__)  
+#define _INVOKE1(func, p, ...) (p)->me->extme.func((p)->ctx, ##__VA_ARGS__) 
+#define _INVOKE2(func, p, ...) (p)->me->advme.func((p)->ctx, ##__VA_ARGS__) 
 
 #define TASK_CAST_UP(ptsk)    ((struct sttask *)ptsk)
 #define TASK_CAST_DOWN(ptsk)  ((ctask_t *)ptsk)

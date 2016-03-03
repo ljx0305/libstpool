@@ -78,7 +78,7 @@ __cpool_rt_method_init()
 static void
 __fac_rt_common_dtor(cpool_t *fac_ins)
 {
-	cpool_rt_free_instance(fac_ins->ins);
+	cpool_rt_free_instance(fac_ins->ctx);
 	free(fac_ins);
 }
 
@@ -101,7 +101,7 @@ __fac_rt_common_ctor(long efuncs, const cpool_method_t *me,
 	/**
 	 * Create the rt pool instance
 	 */
-	if ((e=cpool_rt_create_instance((cpool_rt_t **)&pool->ins, desc, maxthreads, minthreads, pri_q_num, suspend, efuncs))) {
+	if ((e=cpool_rt_create_instance((cpool_rt_t **)&pool->ctx, desc, maxthreads, minthreads, pri_q_num, suspend, efuncs))) {
 		MSG_log2(M_RT, LOG_ERR,
 			   "Failed to create rt pool. code(%d)",
 			   e);
