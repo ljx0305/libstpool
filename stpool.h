@@ -281,22 +281,20 @@ enum {
 	TASK_VMARK_DISABLE_QUEUE = 0x0040,		
 	
 	/**
-	 * The REMOVE mask sets
+	 * The REMOVE mask sets: 
+	 * 	(TASK_VMARK_REMOVE_BYPOOL|TASK_VMARK_REMOVE)
 	 *
 	 * @note the library will ensure that the REMOVE flags will not be cleared until 
 	 * the user calls the APIs such as @ref stpool_task_queue, @ref stpool_add_routine,
 	 * @ref stpool_clone_add_queue, and @ref stpool_group_add_routine to try to deliver
 	 * the task into the pool's pending queue again.
-	 */
-	TASK_VMARK_REMOVE_FLAGS = TASK_VMARK_REMOVE_BYPOOL|TASK_VMARK_REMOVE,
-
-	/**
-	 * The mask sets that can be used by users to mark the tasks
+	 *
+	 * 
+	 * The mask sets that can be used by users to mark the tasks: 
+	 * 	 (TASK_VMARK_REMOVE_FLAGS|TASK_VMARK_ENABLE_QUEUE|TASK_VMARK_DISABLE_QUEUE)
 	 *
 	 * @note User can get the recent VM flags of the task by @ref stpool_task_vm
 	 */
-	TASK_VMARK_USER_FLAGS = TASK_VMARK_REMOVE_FLAGS|TASK_VMARK_ENABLE_QUEUE|
-	                        TASK_VMARK_DISABLE_QUEUE,
 };
 
 /** Schedule policy for the servering threads */
@@ -1151,7 +1149,7 @@ EXPORT char *stpool_scheduler_map_dump2(stpool_t *pool, char *buffer, int len);
  *
  * If we suspend the pool, the pool will go to sleep, and all pending tasks 
  * will not be excuted any way until the user calls @ref stpool_resume to wake
- * up it.
+ * it up.
  *
  * @param [in] pool  the pool handle 
  *

@@ -152,11 +152,11 @@ cpool_rt_wakeup_task_wait(struct WWAKE_requester *r)
 }
 
 int   
-cpool_rt_suspend(cpool_ctx_t ctx, long ms)
+cpool_rt_suspend(void *ins, long ms)
 {
 	int e = 0;
 	uint64_t us_clock = us_startr();
-	cpool_rt_t *rtp = ctx;
+	cpool_rt_t *rtp = ins;
 	
 	DECLARE_WWAKE_REQUEST(r, 
 						WWAKE_id(), 
@@ -230,17 +230,17 @@ cpool_rt_suspend(cpool_ctx_t ctx, long ms)
 }
 
 int   
-cpool_rt_remove_all(cpool_ctx_t ctx, int dispatched_bypool)
+cpool_rt_remove_all(void *ins, int dispatched_bypool)
 {
-	return cpool_rt_mark_all(ctx, dispatched_bypool ? eTASK_VM_F_REMOVE_BYPOOL : eTASK_VM_F_REMOVE);
+	return cpool_rt_mark_all(ins, dispatched_bypool ? eTASK_VM_F_REMOVE_BYPOOL : eTASK_VM_F_REMOVE);
 }
 
 int   
-cpool_rt_wait_all(cpool_ctx_t ctx, long ms)
+cpool_rt_wait_all(void *ins, long ms)
 {
 	int e = 0;
 	uint64_t us_clock = us_startr();
-	cpool_rt_t *rtp = ctx;
+	cpool_rt_t *rtp = ins;
 	
 	DECLARE_WWAKE_REQUEST(r, 
 						WWAKE_id(), 
@@ -309,10 +309,10 @@ cpool_rt_wait_all(cpool_ctx_t ctx, long ms)
 }
 
 struct cpool_stat *
-cpool_rt_stat(cpool_ctx_t ctx, struct cpool_stat *stat)
+cpool_rt_stat(void *ins, struct cpool_stat *stat)
 {
 	struct cpool_core_stat core_stat;
-	cpool_rt_t *rtp = ctx;
+	cpool_rt_t *rtp = ins;
 
 	bzero(stat, sizeof(*stat));
 	
@@ -327,9 +327,9 @@ cpool_rt_stat(cpool_ctx_t ctx, struct cpool_stat *stat)
 }
 
 int
-cpool_rt_task_init(cpool_ctx_t ctx, ctask_t *ptask)
+cpool_rt_task_init(void *ins, ctask_t *ptask)
 {
-	cpool_rt_t *rtp = ctx;
+	cpool_rt_t *rtp = ins;
 	
 	if (eTASK_VM_F_CACHE & ptask->f_vmflags) 
 		return 0;
@@ -378,11 +378,11 @@ __cpool_rt_task_queue_preprocess(cpool_rt_t *rtp, ctask_t *ptask)
 }
 
 int   
-cpool_rt_task_queue(cpool_ctx_t ctx, ctask_t *ptask)
+cpool_rt_task_queue(void *ins, ctask_t *ptask)
 {
 	uint8_t f_stat;
 	int e, reschedule = 0;
-	cpool_rt_t *rtp = ctx;
+	cpool_rt_t *rtp = ins;
 	
 	/**
 	 * FIX BUGS: If user calls @stpool_task_queue in the Walk functions,
@@ -437,13 +437,13 @@ cpool_rt_task_queue(cpool_ctx_t ctx, ctask_t *ptask)
 }
 
 int   
-cpool_rt_task_remove(cpool_ctx_t ctx, ctask_t *ptask, int dispatched_by_pool)
+cpool_rt_task_remove(void *ins, ctask_t *ptask, int dispatched_by_pool)
 {
 	/**
 	 * This interface is only be allowed to be called in the ctask_t::task_run
 	 * or in the ctask_t::task_err_handler.
 	 */
-	assert (ptask->pool && ptask->f_stat && ptask->pool->ctx == ctx &&
+	assert (ptask->pool && ptask->f_stat && ptask->pool->ins == ins &&
 			eTASK_STAT_F_SCHEDULING & ptask->f_stat);
 	
 	ptask->f_stat &= ~eTASK_STAT_F_WPENDING;
@@ -451,13 +451,13 @@ cpool_rt_task_remove(cpool_ctx_t ctx, ctask_t *ptask, int dispatched_by_pool)
 }
 
 void
-cpool_rt_task_mark(cpool_ctx_t ctx, ctask_t *ptask, long lflags)
+cpool_rt_task_mark(void *ins, ctask_t *ptask, long lflags)
 {
 	/**
 	 * This interface is only be allowed to be called in the ctask_t::task_run
 	 * or in the ctask_t::task_err_handler.
 	 */
-	assert (ptask->pool && ptask->f_stat && ptask->pool->ctx == ctx &&
+	assert (ptask->pool && ptask->f_stat && ptask->pool->ins == ins &&
 			eTASK_STAT_F_SCHEDULING & ptask->f_stat);
 
 	lflags &= eTASK_VM_F_USER_FLAGS;
@@ -469,13 +469,13 @@ cpool_rt_task_mark(cpool_ctx_t ctx, ctask_t *ptask, long lflags)
 }
 
 long  
-cpool_rt_task_stat(cpool_ctx_t ctx, ctask_t *ptask, long *vm)
+cpool_rt_task_stat(void *ins, ctask_t *ptask, long *vm)
 {
 	/**
 	 * This interface is only be allowed to be called in the ctask_t::task_run
 	 * or in the ctask_t::task_err_handler.
 	 */
-	assert (ptask->pool && ptask->f_stat && ptask->pool->ctx == ctx &&
+	assert (ptask->pool && ptask->f_stat && ptask->pool->ins == ins &&
 			eTASK_STAT_F_SCHEDULING & ptask->f_stat);
 	
 	if (vm) 
@@ -485,14 +485,14 @@ cpool_rt_task_stat(cpool_ctx_t ctx, ctask_t *ptask, long *vm)
 }
 
 int   
-cpool_rt_mark_all(cpool_ctx_t ctx, long lflags)
+cpool_rt_mark_all(void *ins, long lflags)
 {
 	int  neffs = 0;
 	long lflags0;
 	LIST_HEAD(rmq);
 	cpriq_t *priq;
 	ctask_t *ptask;
-	cpool_rt_t *rtp = ctx;
+	cpool_rt_t *rtp = ins;
 	
 	/**
 	 * Filt the flags
@@ -584,14 +584,14 @@ cpool_rt_mark_all(cpool_ctx_t ctx, long lflags)
 	} while (0)
 
 int   
-cpool_rt_mark_cb(cpool_ctx_t ctx, Visit_cb cb, void *cb_arg)
+cpool_rt_mark_cb(void *ins, Visit_cb cb, void *cb_arg)
 {
 	int  neffs = 0, ok = 0;
 	long lflags, task_counter = 0;
 	LIST_HEAD(rmq);
 	ctask_t *ptask, *n;
 	cpriq_t *priq, *npriq;
-	cpool_rt_t *rtp = ctx;
+	cpool_rt_t *rtp = ins;
 	
 	OSPX_pthread_mutex_lock(&rtp->core->mut);
 	if (rtp->lflags & eFUNC_F_PRIORITY) {
@@ -624,5 +624,104 @@ cpool_rt_mark_cb(cpool_ctx_t ctx, Visit_cb cb, void *cb_arg)
 		__cpool_rt_task_dispatch(rtp, &rmq, 0);
 	
 	return neffs;
+}
+
+static void
+cpool_rt_wakeup_throttle_wait(struct WWAKE_requester *r)
+{
+	cpool_rt_t *rtp = ((cpool_core_t *)r->opaque)->priv;
+	
+	if (!r->b_interrupted) {
+		r->b_interrupted = 1;
+
+		rtp->ev_need_notify = 0;
+		OSPX_pthread_cond_broadcast(rtp->cond_event);
+	}
+}
+
+void  
+cpool_rt_throttle_ctl(void *ins, int on)
+{
+	cpool_rt_t *rtp = ins;
+	
+	OSPX_pthread_mutex_lock(&rtp->core->mut);
+	rtp->throttle_on = on;
+	if (!on && rtp->ev_need_notify) {
+		OSPX_pthread_cond_broadcast(rtp->cond_event);
+		rtp->ev_need_notify = 0;
+	}
+	OSPX_pthread_mutex_unlock(&rtp->core->mut);
+}
+
+int   
+cpool_rt_throttle_wait(void *ins, long ms)
+{
+	int e = 0;
+	cpool_rt_t *rtp = ins;
+	uint64_t us_clock;
+	
+	DECLARE_WWAKE_REQUEST(r, 
+						WWAKE_id(), 
+						cpool_rt_wakeup_throttle_wait, 
+						rtp);
+	
+	if (!rtp->throttle_on)
+		return 0;
+	
+	if (!ms)
+		return eERR_TIMEDOUT;
+	us_clock = us_startr();
+	/**
+	 * Regist us at the WAKE sub system
+	 */
+	WWAKE_add(&r);
+	
+	OSPX_pthread_mutex_lock(&rtp->core->mut);
+	for (;;) {
+		if (!rtp->throttle_on) {
+			e = 0;
+			break;
+		}
+
+		if (CORE_F_destroying & cpool_core_statusl(rtp->core)) {
+			e = eERR_DESTROYING;
+			break;
+		}
+
+		if (r.b_interrupted) {
+			e = eERR_INTERRUPTED;
+			break;
+		}
+
+		/**
+		 * Check the timeout
+		 */
+		if (ms >= 0) {
+			if (ms > 0)
+				ms -= us_endr(us_clock) / 1000;
+
+			if (ms <= 0) {
+				e = eERR_TIMEDOUT; printf("Timeout\n");
+				break;
+			}
+		}
+
+		rtp->ev_need_notify = 1;
+		++ rtp->ev_wref; 
+		OSPX_pthread_cond_timedwait(rtp->cond_event, &rtp->core->mut, ms);
+		-- rtp->ev_wref; 
+		
+		/**
+		 * Check the sync env 
+		 */
+		if (!rtp->ev_wref && rtp->ref_sync) {
+			rtp->ref_sync = 0;
+			OSPX_pthread_cond_broadcast(rtp->cond_sync);
+		}
+	}
+	OSPX_pthread_mutex_unlock(&rtp->core->mut);
+	WWAKE_erase_direct(&r);
+
+	return e;
 }
 

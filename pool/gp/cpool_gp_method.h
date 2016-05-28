@@ -23,51 +23,49 @@ void cpool_gp_core_finished(void *priv, thread_t *self, basic_task_t *ptask, lon
 long cpool_gp_core_err_reasons(basic_task_t *ptask);
 
 /** Method sets for the BASIC interfaces */
-int   cpool_gp_suspend(cpool_ctx_t ctx, long ms);
-int   cpool_gp_remove_all(cpool_ctx_t ctx, int dispatched_by_pool);
-int   cpool_gp_mark_all(cpool_ctx_t ctx, long lflags);
-int   cpool_gp_wait_all(cpool_ctx_t ctx, long ms);
-int   cpool_gp_wait_cb(cpool_ctx_t ctx, Visit_cb cb, void *cb_arg, long ms);
-int   cpool_gp_mark_cb(cpool_ctx_t ctx, Visit_cb cb, void *cb_arg);
+int   cpool_gp_suspend(void *ins, long ms);
+int   cpool_gp_remove_all(void *ins, int dispatched_by_pool);
+int   cpool_gp_mark_all(void *ins, long lflags);
+int   cpool_gp_wait_all(void *ins, long ms);
+int   cpool_gp_wait_cb(void *ins, Visit_cb cb, void *cb_arg, long ms);
+int   cpool_gp_mark_cb(void *ins, Visit_cb cb, void *cb_arg);
 
-struct cpool_stat *cpool_gp_stat(cpool_ctx_t ctx, struct cpool_stat *stat);
-char * cpool_gp_scheduler_map_dump(cpool_ctx_t ctx, char *buff, size_t bufflen);
+struct cpool_stat *cpool_gp_stat(void *ins, struct cpool_stat *stat);
+char * cpool_gp_scheduler_map_dump(void *ins, char *buff, size_t bufflen);
 
-int   cpool_gp_task_queue(cpool_ctx_t ctx, ctask_t *ptask);
-int   cpool_gp_task_remove(cpool_ctx_t ctx, ctask_t *ptask, int dispatched_by_pool);
-void  cpool_gp_task_detach(cpool_ctx_t ctx, ctask_t *ptask);
-void  cpool_gp_task_mark(cpool_ctx_t ctx, ctask_t *ptask, long lflags);
-long  cpool_gp_task_stat(cpool_ctx_t ctx, ctask_t *ptask, long *vm);
-
-/** Method sets for the EXTENTED interfaces */
-void  cpool_gp_throttle_ctl(cpool_ctx_t ctx, int on);
-int   cpool_gp_throttle_wait(cpool_ctx_t ctx, long ms);
-int   cpool_gp_wait_any(cpool_ctx_t ctx, long ms);
-int   cpool_gp_task_wsync(cpool_ctx_t ctx, ctask_t *ptask);
-int   cpool_gp_task_wait(cpool_ctx_t ctx, ctask_t *ptask, long ms);
-int   cpool_gp_task_wait_any(cpool_ctx_t ctx, ctask_t *entry[], int n, long ms);
+int   cpool_gp_task_queue(void *ins, ctask_t *ptask);
+int   cpool_gp_task_remove(void *ins, ctask_t *ptask, int dispatched_by_pool);
+void  cpool_gp_task_detach(void *ins, ctask_t *ptask);
+void  cpool_gp_task_mark(void *ins, ctask_t *ptask, long lflags);
+long  cpool_gp_task_stat(void *ins, ctask_t *ptask, long *vm);
+void  cpool_gp_throttle_ctl(void *ins, int on);
+int   cpool_gp_throttle_wait(void *ins, long ms);
+int   cpool_gp_wait_any(void *ins, long ms);
+int   cpool_gp_task_wsync(void *ins, ctask_t *ptask);
+int   cpool_gp_task_wait(void *ins, ctask_t *ptask, long ms);
+int   cpool_gp_task_wait_any(void *ins, ctask_t *entry[], int n, long ms);
 
 /** Method sets for the ADVACNED interfaces */
-int   cpool_gp_entry_create(cpool_ctx_t ctx, const char *desc, int pri_q_num, int suspend);
-void  cpool_gp_entry_delete(cpool_ctx_t ctx, int gid);
-int   cpool_gp_entry_id(cpool_ctx_t ctx, const char *desc);
-char *cpool_gp_entry_desc(cpool_ctx_t ctx, int gid, char *desc_buff, size_t len);
-int   cpool_gp_entry_stat(cpool_ctx_t ctx, int gid, struct ctask_group_stat *gstat);
-int   cpool_gp_entry_stat_all(cpool_ctx_t ctx, struct ctask_group_stat **gstat);
-int   cpool_gp_entry_suspend(cpool_ctx_t ctx, int gid, long ms);
-int   cpool_gp_entry_suspend_all(cpool_ctx_t ctx, long ms);
-void  cpool_gp_entry_resume(cpool_ctx_t ctx, int gid);
-void  cpool_gp_entry_resume_all(cpool_ctx_t ctx);
-int   cpool_gp_entry_setattr(cpool_ctx_t ctx, int gid, struct scheduler_attr *attr);
-int   cpool_gp_entry_getattr(cpool_ctx_t ctx, int gid, struct scheduler_attr *attr);
-void  cpool_gp_entry_throttle_ctl(cpool_ctx_t ctx, int gid, int enable);
-int   cpool_gp_entry_throttle_wait(cpool_ctx_t ctx, int gid, long ms);
-int   cpool_gp_entry_remove_all(cpool_ctx_t ctx, int gid, int dispatched_by_pool);
-int   cpool_gp_entry_mark_all(cpool_ctx_t ctx, int gid, long lflags);
-int   cpool_gp_entry_mark_cb(cpool_ctx_t ctx, int gid, Visit_cb wcb, void *wcb_arg);
-int   cpool_gp_entry_wait_all(cpool_ctx_t ctx, int gid, long ms);
-int   cpool_gp_entry_wait_cb(cpool_ctx_t ctx, int gid, Visit_cb wcb, void *wcb_arg, long ms);
-int   cpool_gp_entry_wait_any(cpool_ctx_t ctx, int gid, long ms);
+int   cpool_gp_entry_create(void *ins, const char *desc, int pri_q_num, int suspend);
+void  cpool_gp_entry_delete(void *ins, int gid);
+int   cpool_gp_entry_id(void *ins, const char *desc);
+char *cpool_gp_entry_desc(void *ins, int gid, char *desc_buff, size_t len);
+int   cpool_gp_entry_stat(void *ins, int gid, struct ctask_group_stat *gstat);
+int   cpool_gp_entry_stat_all(void *ins, struct ctask_group_stat **gstat);
+int   cpool_gp_entry_suspend(void *ins, int gid, long ms);
+int   cpool_gp_entry_suspend_all(void *ins, long ms);
+void  cpool_gp_entry_resume(void *ins, int gid);
+void  cpool_gp_entry_resume_all(void *ins);
+int   cpool_gp_entry_setattr(void *ins, int gid, struct scheduler_attr *attr);
+int   cpool_gp_entry_getattr(void *ins, int gid, struct scheduler_attr *attr);
+void  cpool_gp_entry_throttle_ctl(void *ins, int gid, int enable);
+int   cpool_gp_entry_throttle_wait(void *ins, int gid, long ms);
+int   cpool_gp_entry_remove_all(void *ins, int gid, int dispatched_by_pool);
+int   cpool_gp_entry_mark_all(void *ins, int gid, long lflags);
+int   cpool_gp_entry_mark_cb(void *ins, int gid, Visit_cb wcb, void *wcb_arg);
+int   cpool_gp_entry_wait_all(void *ins, int gid, long ms);
+int   cpool_gp_entry_wait_cb(void *ins, int gid, Visit_cb wcb, void *wcb_arg, long ms);
+int   cpool_gp_entry_wait_any(void *ins, int gid, long ms);
 
 /** Create a routine pool instance */
 int  cpool_gp_create_instance(cpool_gp_t **p_gpool, const char *desc, int max, int min, int pri_q_num, int suspend, long lflags);

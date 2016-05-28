@@ -215,7 +215,7 @@ static inline void cpool_core_objs_local_flush_all(cpool_core_t *core)
 	thread_t *thread;
 		
 	/**
-	 * Notify all threads to flush its cache
+	 * Notify all threads to flush their caches
 	 */
 	OSPX_pthread_mutex_lock(&core->mut);
 	list_for_each_entry(thread, &core->ths, thread_t, link) {

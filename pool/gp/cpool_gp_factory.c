@@ -16,6 +16,8 @@
 
 static cpool_method_t __gpool_me = {
 		{
+			cpool_gp_stat,
+			cpool_gp_scheduler_map_dump,
 			cpool_com_atexit,
 			cpool_com_addref,
 			cpool_com_release,
@@ -31,11 +33,13 @@ static cpool_method_t __gpool_me = {
 			cpool_gp_mark_all,
 			cpool_gp_mark_cb,
 			cpool_gp_wait_all,
-			cpool_gp_stat,
-			cpool_gp_scheduler_map_dump,
+			cpool_gp_throttle_ctl,
+			cpool_gp_throttle_wait,
+			cpool_gp_wait_any,
+			cpool_gp_wait_cb,
+			sizeof(ctask_trace_t),
 			cpool_com_cache_get,
 			cpool_com_cache_put, 
-			sizeof(ctask_trace_t),
 			NULL,
 			NULL, 
 			cpool_gp_task_queue,
@@ -43,15 +47,9 @@ static cpool_method_t __gpool_me = {
 			cpool_gp_task_mark,
 			cpool_gp_task_detach, 
 			cpool_gp_task_stat,
-		},
-		{
-			cpool_gp_throttle_ctl,
-			cpool_gp_throttle_wait,
-			cpool_gp_wait_any,
-			cpool_gp_wait_cb,
+			cpool_gp_task_wait,
 			cpool_gp_task_wait_any,
 			cpool_gp_task_wsync,
-			cpool_gp_task_wait,
 		}, 
 		{
 			cpool_gp_entry_create,
@@ -80,7 +78,7 @@ static cpool_method_t __gpool_me = {
 void 
 __fac_gp_common_dtor(cpool_t *pool)
 {
-	cpool_gp_free_instance(pool->ctx);
+	cpool_gp_free_instance(pool->ins);
 	free(pool);
 }
 
@@ -102,7 +100,7 @@ __fac_gp_common_ctor(long efuncs, const cpool_method_t *me,
 	/**
 	 * Create the rt pool instance
 	 */
-	if ((e=cpool_gp_create_instance((cpool_gp_t **)&pool->ctx, desc, maxthreads, minthreads, priq_num, suspend, efuncs))) {
+	if ((e=cpool_gp_create_instance((cpool_gp_t **)&pool->ins, desc, maxthreads, minthreads, priq_num, suspend, efuncs))) {
 		MSG_log(M_GROUP, LOG_ERR,
 			   "Failed to create gp pool. code(%d)\n",
 			   e);
@@ -127,7 +125,7 @@ get_gp_dynamic_factory()
 {
 	static cpool_factory_t __dummy_fac = {
 		85, 
-		eFUNC_F_TASK_EX|eFUNC_F_EXTEND|eFUNC_F_ADVANCE|eFUNC_F_DYNAMIC_THREADS|eFUNC_F_DISABLEQ|
+		eFUNC_F_TASK_EX|eFUNC_F_ADVANCE|eFUNC_F_DYNAMIC_THREADS|eFUNC_F_DISABLEQ|
 		eFUNC_F_TASK_WAITABLE|eFUNC_F_PRIORITY|eFUNC_F_TRACEABLE, 
 		&__gpool_me, fac_gp_dynamic_create,
 	};

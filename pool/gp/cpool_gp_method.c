@@ -94,10 +94,10 @@ cpool_gp_free_instance(cpool_gp_t *gpool)
 }
 
 int   
-cpool_gp_task_queue(cpool_ctx_t ctx, ctask_t *ptask)
+cpool_gp_task_queue(void * ins, ctask_t *ptask)
 {
 	int e = 0, gid = ptask->gid;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	ctask_entry_t *entry;
 	
 	/**
@@ -176,15 +176,15 @@ cpool_gp_task_queue(cpool_ctx_t ctx, ctask_t *ptask)
 }
 
 int   
-cpool_gp_task_remove(cpool_ctx_t ctx, ctask_t *ptask, int dispatched_by_pool)
+cpool_gp_task_remove(void * ins, ctask_t *ptask, int dispatched_by_pool)
 {
 	int ok = 0; 
 	long rmflags = eTASK_VM_F_REMOVE;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	LIST_HEAD(rmq);
 	struct list_head *q = &rmq;
 
-	assert (ptask->pool && ptask->pool->ctx == ctx);
+	assert (ptask->pool && ptask->pool->ins == ins);
 	
 	if (!ptask->f_stat)
 		return 0;
@@ -221,11 +221,11 @@ cpool_gp_task_remove(cpool_ctx_t ctx, ctask_t *ptask, int dispatched_by_pool)
 }
 
 void  
-cpool_gp_task_detach(cpool_ctx_t ctx, ctask_t *ptask)
+cpool_gp_task_detach(void * ins, ctask_t *ptask)
 {
 	ctask_trace_t *ptask0 = TASK_CAST_TRACE(ptask);
 	thread_t *self = ptask0->thread;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	ctask_entry_t *entry; 
 
 	assert (ptask0 && gpool && ptask0->task_run); 
@@ -331,9 +331,9 @@ cpool_gp_task_detach(cpool_ctx_t ctx, ctask_t *ptask)
 }
 
 void
-cpool_gp_task_mark(cpool_ctx_t ctx, ctask_t *ptask, long lflags)
+cpool_gp_task_mark(void * ins, ctask_t *ptask, long lflags)
 {
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 
 	lflags &= eTASK_VM_F_USER_FLAGS;
 	
@@ -341,7 +341,7 @@ cpool_gp_task_mark(cpool_ctx_t ctx, ctask_t *ptask, long lflags)
 		return;
 	
 	if (lflags == (lflags & eTASK_VM_F_REMOVE_FLAGS))
-		cpool_gp_task_remove(ctx, ptask, lflags & eTASK_VM_F_REMOVE_BYPOOL);
+		cpool_gp_task_remove(ins, ptask, lflags & eTASK_VM_F_REMOVE_BYPOOL);
 	
 	else {
 		long rmflags = lflags & eTASK_VM_F_REMOVE_FLAGS;
@@ -370,12 +370,12 @@ cpool_gp_task_mark(cpool_ctx_t ctx, ctask_t *ptask, long lflags)
 }
 
 long  
-cpool_gp_task_stat(cpool_ctx_t ctx, ctask_t *ptask, long *vm)
+cpool_gp_task_stat(void * ins, ctask_t *ptask, long *vm)
 {
 	long f_stat = 0, f_vm = 0, entry_stat = 0;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
-	assert (ptask->pool && ptask->pool->ctx == ctx);
+	assert (ptask->pool && ptask->pool->ins == ins);
 
 	/**
 	 * Check the group id and the task's status
@@ -401,10 +401,10 @@ cpool_gp_task_stat(cpool_ctx_t ctx, ctask_t *ptask, long *vm)
 }
 
 int   
-cpool_gp_suspend(cpool_ctx_t ctx, long ms)
+cpool_gp_suspend(void * ins, long ms)
 {
 	int e = 0;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	OSPX_pthread_mutex_lock(&gpool->core->mut);
 	/**
@@ -426,10 +426,10 @@ cpool_gp_suspend(cpool_ctx_t ctx, long ms)
 }
 
 int  
-cpool_gp_wait_all(cpool_ctx_t ctx, long ms)
+cpool_gp_wait_all(void * ins, long ms)
 {
 	int e;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	OSPX_pthread_mutex_lock(&gpool->core->mut);
 	e = __cpool_gp_w_wait_cbl(gpool, -1, WAIT_CLASS_POOL|WAIT_TYPE_TASK_ALL, NULL, NULL, ms);
@@ -439,27 +439,27 @@ cpool_gp_wait_all(cpool_ctx_t ctx, long ms)
 }
 
 int   
-cpool_gp_remove_all(cpool_ctx_t ctx, int dispatched_by_pool)
+cpool_gp_remove_all(void * ins, int dispatched_by_pool)
 {
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	return cpool_gp_mark_all(gpool, dispatched_by_pool ? eTASK_VM_F_REMOVE_BYPOOL : eTASK_VM_F_REMOVE);
 }
 
 int   
-cpool_gp_mark_all(cpool_ctx_t ctx, long lflags)
+cpool_gp_mark_all(void * ins, long lflags)
 {
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	return cpool_gp_mark_cb(gpool, NULL, (void *)lflags);
 }
 
 int   
-cpool_gp_mark_cb(cpool_ctx_t ctx, Visit_cb cb, void *cb_arg)
+cpool_gp_mark_cb(void * ins, Visit_cb cb, void *cb_arg)
 {
 	int neffs;
 	LIST_HEAD(rmq);
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	OSPX_pthread_mutex_lock(&gpool->core->mut);
 	neffs = __cpool_gp_entry_mark_cbl(gpool, NULL, cb, cb_arg, &rmq);
@@ -476,10 +476,10 @@ cpool_gp_mark_cb(cpool_ctx_t ctx, Visit_cb cb, void *cb_arg)
 }
 
 int   
-cpool_gp_wait_cb(cpool_ctx_t ctx, Visit_cb cb, void *cb_arg, long ms)
+cpool_gp_wait_cb(void * ins, Visit_cb cb, void *cb_arg, long ms)
 {
 	int e;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 
 	OSPX_pthread_mutex_lock(&gpool->core->mut);
 	e = __cpool_gp_w_wait_cbl(gpool, -1, WAIT_CLASS_POOL|WAIT_TYPE_TASK, cb, cb_arg, ms);
@@ -489,11 +489,11 @@ cpool_gp_wait_cb(cpool_ctx_t ctx, Visit_cb cb, void *cb_arg, long ms)
 }
 
 struct cpool_stat *
-cpool_gp_stat(cpool_ctx_t ctx, struct cpool_stat *stat)
+cpool_gp_stat(void * ins, struct cpool_stat *stat)
 {
 	int idx = 0;
 	struct cpool_core_stat core_stat;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 		
 	OSPX_pthread_mutex_lock(&gpool->core->mut);	
 	cpool_core_statl(gpool->core, &core_stat);
@@ -531,9 +531,9 @@ cpool_gp_stat(cpool_ctx_t ctx, struct cpool_stat *stat)
 }
 
 char *
-cpool_gp_scheduler_map_dump(cpool_ctx_t ctx, char *buff, size_t bufflen)
+cpool_gp_scheduler_map_dump(void * ins, char *buff, size_t bufflen)
 {
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	OSPX_pthread_mutex_lock(&gpool->core->mut);
 	buff = __cpool_gp_entry_dumpl(gpool, buff, bufflen);
@@ -542,3 +542,132 @@ cpool_gp_scheduler_map_dump(cpool_ctx_t ctx, char *buff, size_t bufflen)
 	return buff;
 }
 
+void  
+cpool_gp_throttle_ctl(void * ins, int on)
+{
+	cpool_gp_t *gpool = ins;
+	
+	OSPX_pthread_mutex_lock(&gpool->core->mut);
+	if (gpool->throttle_on && !on)
+		__cpool_gp_w_wakeup_pool_throttlel(gpool);	
+	gpool->throttle_on = on;
+	OSPX_pthread_mutex_unlock(&gpool->core->mut);
+}
+
+int   
+cpool_gp_throttle_wait(void * ins, long ms)
+{
+	int e;
+	cpool_gp_t *gpool = ins;
+
+	OSPX_pthread_mutex_lock(&gpool->core->mut);
+	__cpool_gp_w_waitl_utils(gpool, WAIT_CLASS_POOL|WAIT_TYPE_THROTTLE,
+		-1,	NULL, ms, e, us_startr(),
+		/**
+		 * If the pool is being destroyed, we return @eERR_DESTROYING
+		 */
+		if (CORE_F_destroying & cpool_core_statusl(gpool->core)) {
+			e = eERR_DESTROYING;
+			break;
+		}
+
+		/**
+		 * Check the throttle status
+		 */
+		if (!gpool->throttle_on) {
+			e = 0;
+			break;
+		}
+	);
+	OSPX_pthread_mutex_unlock(&gpool->core->mut);
+			
+	return e;
+}
+
+int   
+cpool_gp_wait_any(void * ins, long ms)
+{
+	int e;
+	cpool_gp_t *gpool = ins;
+
+	OSPX_pthread_mutex_lock(&gpool->core->mut);
+	e = __cpool_gp_w_wait_cbl(ins, -1, WAIT_CLASS_POOL|WAIT_TYPE_TASK_ANY, NULL, NULL, ms);
+	OSPX_pthread_mutex_unlock(&gpool->core->mut);
+	
+	return e;
+}
+
+int   
+cpool_gp_task_wsync(void * ins, ctask_t *ptask)
+{
+	cpool_gp_t *gpool = ins;
+	
+	if (ptask->ref) {
+		OSPX_pthread_mutex_lock(&gpool->core->mut);
+		for (;ptask->ref;)
+			OSPX_pthread_cond_wait(&gpool->cond_sync, &gpool->core->mut);
+		OSPX_pthread_mutex_unlock(&gpool->core->mut);
+	}
+
+	return 0;
+}
+
+int   
+cpool_gp_task_wait(void * ins, ctask_t *ptask, long ms)
+{
+	int e;
+	cpool_gp_t *gpool = ins;
+	
+	if (!ptask->f_stat)
+		return 0;
+
+	assert (ins == ptask->pool->ins);
+	if (!ms)
+		return eERR_TIMEDOUT;
+
+	OSPX_pthread_mutex_lock(&gpool->core->mut);
+	e = __cpool_gp_w_wait_cbl(ins, ptask->gid, WAIT_CLASS_ENTRY|WAIT_TYPE_TASK, NULL, (void *)ptask, ms);
+	OSPX_pthread_mutex_unlock(&gpool->core->mut);
+	
+	return e;
+}
+
+int
+cpool_gp_task_wait_any(void * ins, ctask_t *entry[], int n, long ms) 
+{
+	int idx, e, m = 0;
+	cpool_gp_t *gpool = ins;
+	
+	/**
+	 * Scan the whole entry to find a task who is free now. 
+	 */
+	for (idx=0; idx<n; idx++) {
+		if (!entry[idx])
+			continue;
+		
+		/**
+		 * The destionation pool of the task must be equal to the Core
+		 */
+		if (!entry[idx]->pool || entry[idx]->pool->ins != ins)
+			return eTASK_ERR_DESTINATION;
+		/**
+		 * If there are any tasks who is free now, we return 0 imediately 
+		 */
+		if (!entry[idx]->f_stat)
+			return 0;
+		
+		++ m;
+	}
+	
+	/**
+	 * If the entry does not contain any valid tasks, we just return 0 
+	 */
+	if (!m)
+		return 0;
+	
+	OSPX_pthread_mutex_lock(&gpool->core->mut);
+	e = __cpool_gp_w_wait_cbl(gpool, n, WAIT_CLASS_POOL|WAIT_TYPE_TASK_ANY2, NULL, (ctask_t *)entry, ms);
+	OSPX_pthread_mutex_unlock(&gpool->core->mut);
+
+	return e;
+}

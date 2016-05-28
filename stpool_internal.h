@@ -16,13 +16,60 @@
 
 #define M_POOL "pool"
 
-#define _INVOKABLE0(func, p)  ((p)->me->me.func != NULL)
-#define _INVOKABLE1(func, p)  ((p)->me->extme.func != NULL)
-#define _INVOKABLE2(func, p)  ((p)->me->advme.func != NULL)
+/**
+ * Macros for basic methods
+ */
+#define Invokable(func, p)   ((p)->me->me.func != NULL)
+#define Invoke(func, p, ...) (p)->me->me.func((p)->ins, ##__VA_ARGS__)  
+#define TRY_Invoke(func, p, ...) \
+	do { \
+		if (Invokable(func, p)) \
+			(p)->me->me.func((p)->ins, ##__VA_ARGS__); \
+	} while (0)
 
-#define _INVOKE0(func, p, ...) (p)->me->me.func((p)->ctx, ##__VA_ARGS__)  
-#define _INVOKE1(func, p, ...) (p)->me->extme.func((p)->ctx, ##__VA_ARGS__) 
-#define _INVOKE2(func, p, ...) (p)->me->advme.func((p)->ctx, ##__VA_ARGS__) 
+#define Invoke_err(e, func, p, ...) (e) = (p)->me->me.func((p)->ins, ##__VA_ARGS__)   
+#define TRY_Invoke_err(code, func, p, ...) \
+	do { \
+		if (!Invokable(func, p)) \
+			(code) = POOL_ERR_NSUPPORT; \
+		else if (((code) = (p)->me->me.func((p)->ins, ##__VA_ARGS__)))  \
+			(code) = __stpool_liberror(code); \
+	} while (0)
+
+#define TRY_Invoke_return_res(res, func, p, ...) \
+	do { \
+		if (!Invokable(func, p)) \
+			return res; \
+		return (p)->me->me.func((p)->ins, ##__VA_ARGS__); \
+	} while (0)
+
+
+/**
+ * Macros for group methods
+ */
+#define InvokableG(func, p)   ((p)->me->advme.func != NULL)
+#define InvokeG(func, p, ...) (p)->me->advme.func((p)->ins, ##__VA_ARGS__)  
+#define TRY_InvokeG(func, p, ...) \
+	do { \
+		if (InvokableG(func, p)) \
+			(p)->me->advme.func((p)->ins, ##__VA_ARGS__); \
+	} while (0)
+
+#define InvokeG_err(e, func, p, ...) (e) = (p)->me->advme.func((p)->ins, ##__VA_ARGS__)   
+#define TRY_InvokeG_err(code, func, p, ...) \
+	do { \
+		if (!InvokableG(func, p)) \
+			(code) = POOL_ERR_NSUPPORT; \
+		else if (((code) = (p)->me->advme.func((p)->ins, ##__VA_ARGS__)))  \
+			(code) = __stpool_liberror(code); \
+	} while (0)
+
+#define TRY_InvokeG_return_res(res, func, p, ...) \
+	do { \
+		if (!InvokableG(func, p)) \
+			return res; \
+		return (p)->me->advme.func((p)->ins, ##__VA_ARGS__); \
+	} while (0)
 
 #define TASK_CAST_UP(ptsk)    ((struct sttask *)ptsk)
 #define TASK_CAST_DOWN(ptsk)  ((ctask_t *)ptsk)
@@ -94,23 +141,18 @@ __enum_CAPs2(long efuncs, const cpool_method_t *const method, int *nfuncs)
 	if (method->me.wait_all)
 		libeCAPs |= eCAP_F_WAIT_ALL;
 		
-	if (eFUNC_F_EXTEND & efuncs) {
-		if (method->extme.throttle_enable)
-			libeCAPs |= eCAP_F_THROTTLE;
+	if (method->me.throttle_enable)
+		libeCAPs |= eCAP_F_THROTTLE;
 
-		if (method->extme.wait_any)
-			libeCAPs |= eCAP_F_WAIT_ANY;
-		
-		if (method->extme.wait_any2)
-			libeCAPs |= eCAP_F_TASK_WAIT_ANY;
-		
-		if (method->extme.task_wait)
-			libeCAPs |= eCAP_F_TASK_WAIT|eCAP_F_WAIT_ALL;
-		
-		if (nfuncs)
-			*nfuncs += __count_funcs((int *)&method->extme, sizeof(method->extme)/sizeof(void *));
-	}
-
+	if (method->me.wait_any)
+		libeCAPs |= eCAP_F_WAIT_ANY;
+	
+	if (method->me.wait_any2)
+		libeCAPs |= eCAP_F_TASK_WAIT_ANY;
+	
+	if (method->me.task_wait)
+		libeCAPs |= eCAP_F_TASK_WAIT|eCAP_F_WAIT_ALL;
+	
 	if (eFUNC_F_ADVANCE & efuncs) {
 		if (method->advme.group_wait_any)
 			libeCAPs |= eCAP_F_GROUP_WAIT_ANY;
@@ -179,17 +221,19 @@ __stpool_task_INIT(ctask_t *ptsk, const char *name,
 static inline int 
 __stpool_task_set_p(ctask_t *ptask, cpool_t *pool)
 {
-	int e;
+	int e = 0;
 	assert (!ptask->ref);
 	
-	if (pool && _INVOKABLE0(task_init, pool) &&
-		(e = _INVOKE0(task_init, pool, ptask)))
-		return e;
+	if (pool && Invokable(task_init, pool))
+		e = Invoke(task_init, pool, ptask);
+	
+	if (!e) {
+		ptask->f_vmflags &= ~eTASK_VM_F_DISABLE_QUEUE;
+		ptask->f_vmflags |= eTASK_VM_F_ENABLE_QUEUE;
+		ptask->pool = pool;	
+	}
 
-	ptask->f_vmflags &= ~eTASK_VM_F_DISABLE_QUEUE;
-	ptask->f_vmflags |= eTASK_VM_F_ENABLE_QUEUE;
-	ptask->pool = pool;	
-	return 0;
+	return e;
 }
 
 extern smcache_t *___smc;
@@ -212,8 +256,8 @@ __stpool_cache_get(stpool_t *pool)
 {
 	ctask_t *ptask = NULL;
 	
-	if (pool && _INVOKABLE0(cache_get, pool)) {
-		if ((ptask = _INVOKE0(cache_get, pool)))
+	if (pool && Invokable(cache_get, pool)) {
+		if ((ptask = Invoke(cache_get, pool)))
 			ptask->pool = pool;
 	
 	} else {
@@ -238,8 +282,8 @@ __stpool_cache_get(stpool_t *pool)
 static inline void 
 __stpool_cache_put(stpool_t *pool, ctask_t *ptask)
 {
-	if (pool && _INVOKABLE0(cache_get, pool))
-		_INVOKE0(cache_put, pool, ptask);
+	if (pool && Invokable(cache_get, pool))
+		Invoke(cache_put, pool, ptask);
 	else
 		smcache_add_dir(___smc, ptask);
 }

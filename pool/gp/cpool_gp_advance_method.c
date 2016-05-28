@@ -18,12 +18,12 @@
 #include "cpool_gp_internal.h"
 
 int   
-cpool_gp_entry_create(cpool_ctx_t ctx, const char *desc, int priq_num, int suspend)
+cpool_gp_entry_create(void * ins, const char *desc, int priq_num, int suspend)
 {
 	int idx, q_num = 0, id = -1, inc = 3;
 	time_t now = time(NULL);
 	ctask_entry_t *entry = NULL, **actentry = NULL;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	/**
 	 * for name buffer 
@@ -187,13 +187,13 @@ out:
 }
 
 void  
-cpool_gp_entry_delete(cpool_ctx_t ctx, int id)
+cpool_gp_entry_delete(void * ins, int id)
 {
 	int warn = 1, e;
 	char *name_desc = NULL;
 	LIST_HEAD(rmq);
 	ctask_entry_t *entry;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	if (id >= 0 && id < gpool->num) {
 		OSPX_pthread_mutex_lock(&gpool->core->mut);
@@ -296,10 +296,10 @@ cpool_gp_entry_delete(cpool_ctx_t ctx, int id)
 }
 
 int   
-cpool_gp_entry_id(cpool_ctx_t ctx, const char *desc)
+cpool_gp_entry_id(void * ins, const char *desc)
 {
 	int idx, id = -1;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 
 	OSPX_pthread_mutex_lock(&gpool->core->mut);
 	for (idx=0; idx<gpool->num; idx++) {
@@ -317,10 +317,10 @@ cpool_gp_entry_id(cpool_ctx_t ctx, const char *desc)
 }
 
 char *
-cpool_gp_entry_desc(cpool_ctx_t ctx, int id, char *desc_buff, size_t len)
+cpool_gp_entry_desc(void * ins, int id, char *desc_buff, size_t len)
 {
 	int get = 0;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	/**
 	 * Check the parameters
@@ -354,11 +354,11 @@ cpool_gp_entry_desc(cpool_ctx_t ctx, int id, char *desc_buff, size_t len)
 }
 
 int
-cpool_gp_entry_suspend(cpool_ctx_t ctx, int id, long ms)
+cpool_gp_entry_suspend(void * ins, int id, long ms)
 {
 	int e = 0;
 	ctask_entry_t *entry;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 
 	if (id < 0 || id > gpool->num) 
 		return eERR_GROUP_NOT_FOUND;
@@ -423,11 +423,11 @@ cpool_gp_entry_suspend(cpool_ctx_t ctx, int id, long ms)
 }
 
 int
-cpool_gp_entry_suspend_all(cpool_ctx_t ctx, long ms)
+cpool_gp_entry_suspend_all(void * ins, long ms)
 {
 	int idx, e = eERR_TIMEDOUT;
 	ctask_entry_t *entry;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	int ids[100], *ids_idx = &ids[0];
 	
 	OSPX_pthread_mutex_lock(&gpool->core->mut);
@@ -497,11 +497,11 @@ cpool_gp_entry_suspend_all(cpool_ctx_t ctx, long ms)
 }
 
 void  
-cpool_gp_entry_resume(cpool_ctx_t ctx, int id)
+cpool_gp_entry_resume(void * ins, int id)
 {
 	int ok = 0;
 	ctask_entry_t *entry;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	if (id < 0 || id > gpool->num) 
 		return;
@@ -554,11 +554,11 @@ cpool_gp_entry_resume(cpool_ctx_t ctx, int id)
 }
 
 void  
-cpool_gp_entry_resume_all(cpool_ctx_t ctx)
+cpool_gp_entry_resume_all(void * ins)
 {
 	int idx;
 	ctask_entry_t *entry;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 
 	OSPX_pthread_mutex_lock(&gpool->core->mut);
 	if (!(CORE_F_created & cpool_core_statusl(gpool->core))) {
@@ -615,10 +615,10 @@ cpool_gp_entry_resume_all(cpool_ctx_t ctx)
 }
 
 int   
-cpool_gp_entry_setattr(cpool_ctx_t ctx, int id, struct scheduler_attr *attr)
+cpool_gp_entry_setattr(void * ins, int id, struct scheduler_attr *attr)
 {
 	int ok = 0;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	if (id >= 0 && id < gpool->num) {
 		OSPX_pthread_mutex_lock(&gpool->core->mut);
@@ -633,10 +633,10 @@ cpool_gp_entry_setattr(cpool_ctx_t ctx, int id, struct scheduler_attr *attr)
 }
 
 int   
-cpool_gp_entry_getattr(cpool_ctx_t ctx, int id, struct scheduler_attr *attr)
+cpool_gp_entry_getattr(void * ins, int id, struct scheduler_attr *attr)
 {
 	int ok = 0;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 
 	if (id >= 0 && id < gpool->num) {
 		OSPX_pthread_mutex_lock(&gpool->core->mut);
@@ -653,9 +653,9 @@ cpool_gp_entry_getattr(cpool_ctx_t ctx, int id, struct scheduler_attr *attr)
 }
 
 void  
-cpool_gp_entry_throttle_ctl(cpool_ctx_t ctx, int id, int enable)
+cpool_gp_entry_throttle_ctl(void * ins, int id, int enable)
 {
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 
 	if (id < 0 || id >= gpool->num) 
 		return;
@@ -679,10 +679,10 @@ cpool_gp_entry_throttle_ctl(cpool_ctx_t ctx, int id, int enable)
 }
 
 int   
-cpool_gp_entry_throttle_wait(cpool_ctx_t ctx, int id, long ms)
+cpool_gp_entry_throttle_wait(void * ins, int id, long ms)
 {
 	int e = eERR_GROUP_NOT_FOUND;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 
 	if (id >= 0 && id < gpool->num) {
 		OSPX_pthread_mutex_lock(&gpool->core->mut);
@@ -714,28 +714,28 @@ cpool_gp_entry_throttle_wait(cpool_ctx_t ctx, int id, long ms)
 }
 
 int   
-cpool_gp_entry_remove_all(cpool_ctx_t ctx, int id, int dispatched_by_pool)
+cpool_gp_entry_remove_all(void * ins, int id, int dispatched_by_pool)
 {
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	long lflags = dispatched_by_pool ? eTASK_VM_F_REMOVE_BYPOOL : eTASK_VM_F_REMOVE;
 		
 	return cpool_gp_entry_mark_all(gpool->core, id, lflags);
 }
 
 int   
-cpool_gp_entry_mark_all(cpool_ctx_t ctx, int id, long lflags)
+cpool_gp_entry_mark_all(void * ins, int id, long lflags)
 {
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	return cpool_gp_entry_mark_cb(gpool->core, id, NULL, (void *)lflags);
 }
 
 int   
-cpool_gp_entry_mark_cb(cpool_ctx_t ctx, int id, Visit_cb wcb, void *wcb_arg)
+cpool_gp_entry_mark_cb(void * ins, int id, Visit_cb wcb, void *wcb_arg)
 {
 	int neffs = 0;
 	LIST_HEAD(rmq);
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	if (id >= 0 && id < gpool->num) {
 		OSPX_pthread_mutex_lock(&gpool->core->mut);
@@ -751,19 +751,19 @@ cpool_gp_entry_mark_cb(cpool_ctx_t ctx, int id, Visit_cb wcb, void *wcb_arg)
 }
 
 int   
-cpool_gp_entry_wait_all(cpool_ctx_t ctx, int id, long ms)
+cpool_gp_entry_wait_all(void * ins, int id, long ms)
 {
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	return cpool_gp_entry_wait_cb(gpool->core, id, NULL, NULL, ms);
 }
 
 int   
-cpool_gp_entry_wait_cb(cpool_ctx_t ctx, int id, Visit_cb cb, void *cb_arg, long ms)
+cpool_gp_entry_wait_cb(void * ins, int id, Visit_cb cb, void *cb_arg, long ms)
 {
 	int e = eERR_GROUP_NOT_FOUND;
 	int type = WAIT_CLASS_ENTRY;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	if (cb)
 		type |= WAIT_TYPE_TASK;
@@ -781,10 +781,10 @@ cpool_gp_entry_wait_cb(cpool_ctx_t ctx, int id, Visit_cb cb, void *cb_arg, long 
 }
 
 int   
-cpool_gp_entry_wait_any(cpool_ctx_t ctx, int id, long ms)
+cpool_gp_entry_wait_any(void * ins, int id, long ms)
 {
 	int e = eERR_GROUP_NOT_FOUND;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 
 	if (id >= 0 && id < gpool->num) {
 		OSPX_pthread_mutex_lock(&gpool->core->mut);
@@ -797,11 +797,11 @@ cpool_gp_entry_wait_any(cpool_ctx_t ctx, int id, long ms)
 }
 
 int 
-cpool_gp_entry_stat(cpool_ctx_t ctx, int gid, struct ctask_group_stat *gstat)
+cpool_gp_entry_stat(void * ins, int gid, struct ctask_group_stat *gstat)
 {
 	int e = eERR_GROUP_NOT_FOUND;
 	ctask_entry_t *entry;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 
 	/**
 	 * We always assume the the pool is active 
@@ -825,12 +825,12 @@ cpool_gp_entry_stat(cpool_ctx_t ctx, int gid, struct ctask_group_stat *gstat)
 }
 
 int 
-cpool_gp_entry_stat_all(cpool_ctx_t ctx, struct ctask_group_stat **gstat)
+cpool_gp_entry_stat_all(void * ins, struct ctask_group_stat **gstat)
 {
 	int n, m = 0, idx;
 	ctask_entry_t *entry;
 	struct ctask_group_stat *p;
-	cpool_gp_t *gpool = ctx;
+	cpool_gp_t *gpool = ins;
 	
 	/**
 	 * for parsing the name buffer 
