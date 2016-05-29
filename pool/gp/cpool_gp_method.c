@@ -247,14 +247,15 @@ cpool_gp_task_detach(void * ins, ctask_t *ptask)
 			ptask->task_desc, ptask, gpool->core->desc);
 		return;
 	}
-
-	__cpool_com_task_nice_adjust(ptask);
-	OSPX_pthread_mutex_lock(&gpool->core->mut);	
+	
 	/**
 	 * Pass the detached status to the external module 
 	 */
 	if (ptask0->pdetached)
 		*ptask0->pdetached = 1;
+
+	__cpool_com_task_nice_adjust(ptask);
+	OSPX_pthread_mutex_lock(&gpool->core->mut);	
 	entry = gpool->entry + ptask0->gid;
 		
 	/**
