@@ -74,7 +74,7 @@ struct gscheduler_attr {
  *
  *    2. Every task can only be added into one group of the pool at the same time.
  *
- *    3. A traceable task should not change its group id casually if it has not been done completely.
+ *    3. The task should not change its group id casually if it has not been done completely.
  *
  *    4. the pool's taskScheduler will peek some tasks from the groups and delive 
  *    	 them into the threadManager to execute.

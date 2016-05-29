@@ -281,22 +281,20 @@ enum {
 	TASK_VMARK_DISABLE_QUEUE = 0x0040,		
 	
 	/**
-	 * The REMOVE mask sets
+	 * The REMOVE mask sets: 
+	 * 	(TASK_VMARK_REMOVE_BYPOOL|TASK_VMARK_REMOVE)
 	 *
 	 * @note the library will ensure that the REMOVE flags will not be cleared until 
 	 * the user calls the APIs such as @ref stpool_task_queue, @ref stpool_add_routine,
 	 * @ref stpool_clone_add_queue, and @ref stpool_group_add_routine to try to deliver
 	 * the task into the pool's pending queue again.
-	 */
-	TASK_VMARK_REMOVE_FLAGS = TASK_VMARK_REMOVE_BYPOOL|TASK_VMARK_REMOVE,
-
-	/**
-	 * The mask sets that can be used by users to mark the tasks
+	 *
+	 * 
+	 * The mask sets that can be used by users to mark the tasks: 
+	 * 	 (TASK_VMARK_REMOVE_FLAGS|TASK_VMARK_ENABLE_QUEUE|TASK_VMARK_DISABLE_QUEUE)
 	 *
 	 * @note User can get the recent VM flags of the task by @ref stpool_task_vm
 	 */
-	TASK_VMARK_USER_FLAGS = TASK_VMARK_REMOVE_FLAGS|TASK_VMARK_ENABLE_QUEUE|
-	                        TASK_VMARK_DISABLE_QUEUE,
 };
 
 /** Schedule policy for the servering threads */
@@ -450,12 +448,12 @@ struct pool_stat {
 	long randtimeo;              
 	
 	/**
-	 * The peek of the tasks number since the pool is created (-1 = UNKOWN)
+	 * The peek of the tasks number since the pool was created (-1 = UNKOWN)
 	 */
 	unsigned int tasks_peak;     
 
 	/**
-	 * The peek of the threads number since the pool is created.
+	 * The peek of the threads number since the pool was created.
 	 */
 	unsigned int threads_peak;   
 
@@ -591,7 +589,7 @@ EXPORT void  stpool_task_delete(struct sttask *ptask);
  * @param [in] ptask the task object
  * @param [in] pool the destination pool
  *
- * @return if the created pool does not has the feature eCAP_TASK_EX, 
+ * @return if the created pool does not support the customed tasks (see eCAP_F_CUSTOM_TASK), 
  *         it returns POOL_ERR_NSUPPORT, or it returns 0 
  * 
  * @note the task should set its destination pool firstly before its being 
@@ -721,7 +719,7 @@ EXPORT int   stpool_task_queue(struct sttask *ptask);
  *                                 (ptask, TASK_VMARK_REMOVE_BYPOOL), or it will call @ref stpool_task_mark 
  *                                 (ptask, TASK_VMARK_REMOVE)
  *
- * @return it returns 0 If the task is free or it really has been removed from the pending queue, or it returs 1.
+ * @return it returns 0 If the task is free now, or it returs 1.
  */
 EXPORT int stpool_task_remove(struct sttask *ptask, int dispatched_by_pool);
 
@@ -756,7 +754,7 @@ EXPORT void stpool_task_mark(struct sttask *ptask, long lflags);
  *             void task_run(struct sttask *ptask) {
  *             	  // TO DO
  *             	
- *             	  // Try to free the customed task in its working routine
+ *             	  // Try to free the customed task in its working routine,
  *                // here we just call @task_err_handler to free it directly
  *                task_err_handler(ptask, 0);
  *             }
@@ -774,7 +772,7 @@ EXPORT void stpool_task_mark(struct sttask *ptask, long lflags);
  * 	           stpool_task_set_userflags(ptask, MYTASK_AUTO_FREE);
  * 	           stpool_task_queue(task);
  * 	           
- * 	           (Here we do not concern about when to free the task object, we just
+ * 	           (Here we do not concern about when to free the customed task object, we just
  * 	            free it in its callback if we do not use it any more)
  * @endcode
  *
@@ -840,8 +838,8 @@ EXPORT int  stpool_task_wait(struct sttask *ptask, long ms);
  *         @ref POOL_ERR_TIMEDOUT               \n
  *         @ref POOL_ERR_NSUPPORT               \n
  *
- * @note the pool will skip the NULL item of the array, and if
- *       the entry does not contain any items, This API returns 0
+ * @note the NULL items will be skiped, and if the entry does not contain any items, 
+ * 		 This API returns 0
  *
  * @see @ref stpool_wait_all, @stpool_wait_cb
  */
@@ -862,8 +860,8 @@ EXPORT int   stpool_task_wait_all(struct sttask *entry[], int n, long ms);
  *         @ref POOL_ERR_TIMEDOUT             \n
  *         @ref POOL_ERR_NSUPPORT             \n
  *
- * @note the pool will skip the NULL item of the array, and if
- *       the entry does not contain any items, This API returns 0
+ * @note the NULL items will be skiped, and if the entry does not contain any items, 
+ * 		 This API returns 0
  */
 EXPORT int   stpool_task_wait_any(struct sttask *entry[], int n, long ms); 
 
@@ -889,7 +887,7 @@ EXPORT const char *stpool_strerror(int error);
  * Create a task pool
  *
  * @param [in] desc       a const string to describle the pool.
- * @param [in] eCAPs      the neccessary capabilities that the pool must have
+ * @param [in] eCAPs      the neccessary capabilities that the pool must support
  *                        (see stpool_caps.h for more details)
  *
  * @param [in] maxthreads the limited number of working threads who will be 
@@ -933,7 +931,7 @@ EXPORT const char *stpool_strerror(int error);
  * @return the pool object on success, NULL otherwise
  *
  * @note user should call @ref stpool_release to free it if he does not need it any more.
- *       the param \@suspend and \@priq_q_num may be ignored by the pool if the \@eCAPs 
+ *       the param \@suspend and \@priq_q_num may be ignored by the library if the \@eCAPs 
  *       does not contain eCAP_F_SUSPEND and eCAP_F_PRIORITY
  */
 EXPORT stpool_t * stpool_create(const char *desc, long eCAPs, int maxthreads, int minthreads, int suspend, int pri_q_num);
@@ -1080,7 +1078,7 @@ EXPORT void stpool_adjust(stpool_t *pool, int maxthreads, int minthreads);
  *
  * This API is to make sure that the reserved threads number will be equal to the
  * param that we have configured by @ref stpool_adjust, or @ref stpool_adjust_bas
- * absolutly.
+ * absolutly. 
  * 
  * @note @ref stpool_adjust and @stpool_adjust_abs will not kill any threads if its 
  *       settings match the condition listed below. 
@@ -1151,7 +1149,7 @@ EXPORT char *stpool_scheduler_map_dump2(stpool_t *pool, char *buffer, int len);
  *
  * If we suspend the pool, the pool will go to sleep, and all pending tasks 
  * will not be excuted any way until the user calls @ref stpool_resume to wake
- * up it.
+ * it up.
  *
  * @param [in] pool  the pool handle 
  *
@@ -1220,7 +1218,7 @@ EXPORT int  stpool_add_routine(stpool_t *pool,
 EXPORT int  stpool_remove_all(stpool_t *pool, int dispatched_by_pool);
 
 /**
- * Mark the tasks existing in the pool with specified flags
+ * Mark the visitable tasks existing in the pool with specified flags
  *
  * These flags listed below can be used to mark the task by user
  *
@@ -1249,7 +1247,7 @@ EXPORT int  stpool_remove_all(stpool_t *pool, int dispatched_by_pool);
  *    
  * @return the number of tasks effected by the flags 
  *
- * @note if the task is being scheduled or is being dispatched, and it has been marked with
+ * @note if the visitable task is being scheduled or is being dispatched, and it has been marked with
  * \@DO_AGAIN by @ref stpool_task_queue, the mark \@DO_AGAIN will be cleared if the param \@lflags
  * owns TASK_VMARK_REMOVE or TASK_VMARK_REMOVE_BYPOOL. but the task object will not store the
  * REMOVE flags.
@@ -1260,7 +1258,7 @@ EXPORT long stpool_mark_all(stpool_t *pool, long lflags);
  * Mark all tasks existing in the pool currently with specified flags.
  *
  * @ref stpool_mark_all and @ref stpool_mark_cb do essentially the same thing, the only 
- * difference is that @ref stpool_group_mark_cb uses the flags returned by the walk callback 
+ * difference is that @ref stpool_mark_cb uses the flags returned by the walk callback 
  * to mark the tasks.
  *
  * @param [in] pool      the pool object
@@ -1335,9 +1333,9 @@ EXPORT int stpool_throttle_wait(stpool_t *pool, long ms);
 EXPORT int  stpool_wait_all(stpool_t *pool, long ms);
 
 /**
- * Wait for all completions of the tasks existing in the pool in \@ms milliseconds
+ * Wait for all completions of the visiable tasks existing in the pool in \@ms milliseconds
  *
- * This API will visit all of tasks existing in the pool and pass their 
+ * This API will visit all of visitable tasks existing in the pool and pass their 
  * status to the user's walk callback, and if user's walk callback returns
  * a none zero value on them, this API will wait for their completions.
  *
@@ -1350,8 +1348,6 @@ EXPORT int  stpool_wait_all(stpool_t *pool, long ms);
  *                                    \n
  *        @ref POOL_ERR_TIMEDOUT      \n
  *        @ref POOL_ERR_NSUPPORT      \n
- *
- * @note the created pool must have capabilities: eCAP_F_TASK_WAIT
  */
 EXPORT int  stpool_wait_cb(stpool_t *pool, Walk_cb wcb, void *wcb_arg, long ms); 
 

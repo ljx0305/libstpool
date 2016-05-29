@@ -13,19 +13,12 @@
 #include <stdlib.h>
 
 /** task */
-struct ctask;
 typedef struct ctask ctask_t;
-
-/** group */
-struct ctask_group_stat;
-
-/** pool */
-struct cpool;
 typedef struct cpool cpool_t;
-typedef struct cpool_core cpool_com_t;
 
 struct scheduler_attr;
 struct thread_attr;
+struct ctask_group_stat;
 
 /** walk callback */
 typedef long (*Visit_cb)(ctask_t *ptask, void *opaque);
@@ -35,82 +28,68 @@ typedef struct cpool_basic_method {
 	/**
 	 * pool interfaces 
 	 */
-	void  (*atexit)(cpool_com_t *ins, void (*__atexit)(cpool_com_t *, void *), void *opaque);
-	long  (*addref)(cpool_com_t *ins);
-	long  (*release)(cpool_com_t *ins);
-	void  (*setattr)(cpool_com_t *ins, struct thread_attr *attr);
-	void  (*getattr)(cpool_com_t *ins, struct thread_attr *attr);
-	void  (*set_activetimeo)(cpool_com_t *ins, long acttimeo, long randtimeo);
-	void  (*adjust)(cpool_com_t *ins, int max, int min);
-	void  (*adjust_abs)(cpool_com_t *ins, int max, int min);
-	int   (*flush)(cpool_com_t *ins);
-	int   (*suspend)(cpool_com_t *ins, long ms);
-	void  (*resume)(cpool_com_t *ins);
-	int   (*remove_all)(cpool_com_t *ins, int dispatched_by_pool);
-	int   (*mark_all)(cpool_com_t *ins, long lflags);
-	int   (*mark_cb)(cpool_com_t *ins, Visit_cb wcb, void *wcb_arg);
-	int   (*wait_all)(cpool_com_t *ins, long ms);
-	
-	/**
-	 * Status
-	 */
-	struct cpool_stat *(*stat)(cpool_com_t *ins, struct cpool_stat *stat);
-	char *(*scheduler_map_dump)(cpool_com_t *ins, char *buff, size_t bufflen);
-
-	/**
-	 * Task cache 
-	 */
-	ctask_t *(*cache_get)(cpool_com_t *ins);
-	void (*cache_put)(cpool_com_t *ins, ctask_t *ptask);
+	struct cpool_stat *(*stat)  (void * ins, struct cpool_stat *stat);
+	char *(*scheduler_map_dump) (void * ins, char *buff, size_t bufflen);
+	void  (*atexit)             (void * ins, void (*__atexit)(void *), void *opaque);
+	long  (*addref)             (void * ins);
+	long  (*release)            (void * ins);
+	void  (*setattr)            (void * ins, struct thread_attr *attr);
+	void  (*getattr)            (void * ins, struct thread_attr *attr);
+	void  (*set_activetimeo)    (void * ins, long acttimeo, long randtimeo);
+	void  (*adjust)             (void * ins, int max, int min);
+	void  (*adjust_abs)         (void * ins, int max, int min);
+	int   (*flush)              (void * ins);
+	int   (*suspend)            (void * ins, long ms);
+	void  (*resume)             (void * ins);
+	int   (*remove_all)         (void * ins, int dispatched_by_pool);
+	int   (*mark_all)           (void * ins, long lflags);
+	int   (*mark_cb)            (void * ins, Visit_cb wcb, void *wcb_arg);
+	int   (*wait_all)           (void * ins, long ms);
+	void  (*throttle_enable)    (void * ins, int enable);
+	int   (*throttle_wait)      (void * ins, long ms);	
+	int   (*wait_any)           (void * ins, long ms);
+	int   (*wait_cb)            (void * ins, Visit_cb wcb, void *wcb_arg, long ms);
 
 	/**
 	 * Task interfaces 
 	 */
 	const size_t task_size;
-	int   (*task_init)(cpool_com_t *ins, ctask_t *ptask);
-	void  (*task_deinit)(cpool_com_t *ins, ctask_t *ptask);
-	int   (*task_queue)(cpool_com_t *ins, ctask_t *ptask);
-	int   (*task_remove)(cpool_com_t *ins, ctask_t *ptask, int dispatched_by_pool);
-	void  (*task_mark)(cpool_com_t *ins, ctask_t *ptask, long lflags);
-	void  (*task_detach)(cpool_com_t *ins, ctask_t *ptask);
-	long  (*task_stat)(cpool_com_t *ins, ctask_t *ptask, long *vm);
-
+	ctask_t *(*cache_get)       (void * ins);
+	void     (*cache_put)       (void * ins, ctask_t *ptask);
+	int      (*task_init)       (void * ins, ctask_t *ptask);
+	void     (*task_deinit)     (void * ins, ctask_t *ptask);
+	int      (*task_queue)      (void * ins, ctask_t *ptask);
+	int      (*task_remove)     (void * ins, ctask_t *ptask, int dispatched_by_pool);
+	void     (*task_mark)       (void * ins, ctask_t *ptask, long lflags);
+	void     (*task_detach)     (void * ins, ctask_t *ptask);
+	long     (*task_stat)       (void * ins, ctask_t *ptask, long *vm);
+	int      (*task_wait)       (void * ins, ctask_t *ptask, long ms);
+	int      (*wait_any2)       (void * ins, ctask_t *entry[], int n, long ms);
+	int      (*task_wsync)      (void * ins, ctask_t *ptask);
 } cpool_basic_method_t;
-
-/** Extended pool method sets */
-typedef struct cpool_extend_method {
-	void  (*throttle_enable)(cpool_com_t *ins, int enable);
-	int   (*throttle_wait)(cpool_com_t *ins, long ms);	
-	int   (*wait_any)(cpool_com_t *ins, long ms);
-	int   (*wait_cb)(cpool_com_t *ins, Visit_cb wcb, void *wcb_arg, long ms);
-	
-	int   (*wait_any2)(cpool_com_t *ins, ctask_t *entry[], int n, long ms);
-	int   (*task_wsync)(cpool_com_t *ins, ctask_t *ptask);
-	int   (*task_wait)(cpool_com_t *ins, ctask_t *ptask, long ms);
-} cpool_extend_method_t;
 
 /** Advance pool method sets */
 typedef struct cpool_advance_method {
-	int   (*group_create)(cpool_com_t *ins, const char *desc, int pri_q_num, int suspend);
-	void  (*group_delete)(cpool_com_t *ins, int gid);
-	int   (*group_id)(cpool_com_t *ins, const char *desc);
-	char *(*group_desc)(cpool_com_t *ins, int gid, char *desc_buff, size_t len);
-	int   (*group_stat)(cpool_com_t *ins, int gid, struct ctask_group_stat *gstat);
-	int   (*group_stat_all)(cpool_com_t *ins, struct ctask_group_stat **gstat);
-	int   (*group_suspend)(cpool_com_t *ins, int gid, long ms);
-	int   (*group_suspend_all)(cpool_com_t *ins, long ms);
-	void  (*group_resume)(cpool_com_t *ins, int gid);
-	void  (*group_resume_all)(cpool_com_t *ins);
-	int   (*group_setattr)(cpool_com_t *ins, int gid, struct scheduler_attr *attr);
-	int   (*group_getattr)(cpool_com_t *ins, int gid, struct scheduler_attr *attr);
-	void  (*group_throttle_enable)(cpool_com_t *ins, int gid, int enable);
-	int   (*group_throttle_wait)(cpool_com_t *ins, int gid, long ms);
-	int   (*group_remove_all)(cpool_com_t *ins, int gid, int dispatched_by_pool);
-	int   (*group_mark_all)(cpool_com_t *ins, int gid, long lflags);
-	int   (*group_mark_cb)(cpool_com_t *ins, int gid, Visit_cb wcb, void *wcb_arg);
-	int   (*group_wait_all)(cpool_com_t *ins, int gid, long ms);
-	int   (*group_wait_cb)(cpool_com_t *ins, int gid, Visit_cb wcb, void *wcb_arg, long ms);
-	int   (*group_wait_any)(cpool_com_t *ins, int gid, long ms);
+	int   (*group_create)          (void * ins, const char *desc, int pri_q_num, int suspend);
+	void  (*group_delete)          (void * ins, int gid);
+	int   (*group_id)              (void * ins, const char *desc);
+	char *(*group_desc)            (void * ins, int gid, char *desc_buff, size_t len);
+	int   (*group_stat)            (void * ins, int gid, struct ctask_group_stat *gstat);
+	int   (*group_stat_all)        (void * ins, struct ctask_group_stat **gstat);
+	int   (*group_suspend)         (void * ins, int gid, long ms);
+	int   (*group_suspend_all)     (void * ins, long ms);
+	void  (*group_resume)          (void * ins, int gid);
+	void  (*group_resume_all)      (void * ins);
+	int   (*group_setattr)         (void * ins, int gid, struct scheduler_attr *attr);
+	int   (*group_getattr)         (void * ins, int gid, struct scheduler_attr *attr);
+	void  (*group_throttle_enable) (void * ins, int gid, int enable);
+	int   (*group_throttle_wait)   (void * ins, int gid, long ms);
+	int   (*group_remove_all)      (void * ins, int gid, int dispatched_by_pool);
+	int   (*group_mark_all)        (void * ins, int gid, long lflags);
+	int   (*group_mark_cb)         (void * ins, int gid, Visit_cb wcb, void *wcb_arg);
+	int   (*group_wait_all)        (void * ins, int gid, long ms);
+	int   (*group_wait_cb)         (void * ins, int gid, Visit_cb wcb, void *wcb_arg, long ms);
+	int   (*group_wait_any)        (void * ins, int gid, long ms);
 } cpool_advance_method_t;
 
 #endif

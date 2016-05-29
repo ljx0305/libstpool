@@ -16,18 +16,60 @@
 
 #define M_POOL "pool"
 
-#define METHOD_HAS(method, func) ((method)->me.func != NULL)
-#define METHOD_EX_HAS(method, func) ((method)->extme.func != NULL)
-#define METHOD_ADV_HAS(method, func) ((method)->advme.func != NULL)
+/**
+ * Macros for basic methods
+ */
+#define Invokable(func, p)   ((p)->me->me.func != NULL)
+#define Invoke(func, p, ...) (p)->me->me.func((p)->ins, ##__VA_ARGS__)  
+#define TRY_Invoke(func, p, ...) \
+	do { \
+		if (Invokable(func, p)) \
+			(p)->me->me.func((p)->ins, ##__VA_ARGS__); \
+	} while (0)
 
-#define ME_HAS(p, func)  ((p)->me->me.func != NULL)
-#define ME_CALL(p, func) (p)->me->me.func  
+#define Invoke_err(e, func, p, ...) (e) = (p)->me->me.func((p)->ins, ##__VA_ARGS__)   
+#define TRY_Invoke_err(code, func, p, ...) \
+	do { \
+		if (!Invokable(func, p)) \
+			(code) = POOL_ERR_NSUPPORT; \
+		else if (((code) = (p)->me->me.func((p)->ins, ##__VA_ARGS__)))  \
+			(code) = __stpool_liberror(code); \
+	} while (0)
 
-#define ME_EX_HAS(p, func) ((p)->efuncs & eFUNC_F_EXTEND  && ((p)->me->extme.func != NULL))
-#define ME_EX_CALL(p, func) (p)->me->extme.func
+#define TRY_Invoke_return_res(res, func, p, ...) \
+	do { \
+		if (!Invokable(func, p)) \
+			return res; \
+		return (p)->me->me.func((p)->ins, ##__VA_ARGS__); \
+	} while (0)
 
-#define ME_ADV_HAS(p, func) ((p)->efuncs & eFUNC_F_ADVANCE && ((p)->me->advme.func != NULL))
-#define ME_ADV_CALL(p, func) (p)->me->advme.func
+
+/**
+ * Macros for group methods
+ */
+#define InvokableG(func, p)   ((p)->me->advme.func != NULL)
+#define InvokeG(func, p, ...) (p)->me->advme.func((p)->ins, ##__VA_ARGS__)  
+#define TRY_InvokeG(func, p, ...) \
+	do { \
+		if (InvokableG(func, p)) \
+			(p)->me->advme.func((p)->ins, ##__VA_ARGS__); \
+	} while (0)
+
+#define InvokeG_err(e, func, p, ...) (e) = (p)->me->advme.func((p)->ins, ##__VA_ARGS__)   
+#define TRY_InvokeG_err(code, func, p, ...) \
+	do { \
+		if (!InvokableG(func, p)) \
+			(code) = POOL_ERR_NSUPPORT; \
+		else if (((code) = (p)->me->advme.func((p)->ins, ##__VA_ARGS__)))  \
+			(code) = __stpool_liberror(code); \
+	} while (0)
+
+#define TRY_InvokeG_return_res(res, func, p, ...) \
+	do { \
+		if (!InvokableG(func, p)) \
+			return res; \
+		return (p)->me->advme.func((p)->ins, ##__VA_ARGS__); \
+	} while (0)
 
 #define TASK_CAST_UP(ptsk)    ((struct sttask *)ptsk)
 #define TASK_CAST_DOWN(ptsk)  ((ctask_t *)ptsk)
@@ -49,7 +91,7 @@ static struct eCAPs_conv_table {
    {"eCAP_F_DISABLEQ",        eCAP_F_DISABLEQ,        eFUNC_F_DISABLEQ},
    {"eCAP_F_REMOVE_BYPOOL",   eCAP_F_REMOVE_BYPOOL,   0},
    {"eCAP_F_ROUTINE",         eCAP_F_ROUTINE,         0},
-   {"eCAP_F_TASK_EX",         eCAP_F_TASK_EX,         eFUNC_F_TASK_EX},
+   {"eCAP_F_CUSTOM_TASK",     eCAP_F_CUSTOM_TASK,     eFUNC_F_TASK_EX},
    {"eCAP_F_TASK_WAIT",       eCAP_F_TASK_WAIT,   	  eFUNC_F_TASK_WAITABLE},
    {"eCAP_F_TASK_WAIT_ALL",   eCAP_F_TASK_WAIT_ALL,   0},
    {"eCAP_F_TASK_WAIT_ANY",   eCAP_F_TASK_WAIT_ANY,   0},
@@ -93,44 +135,39 @@ __enum_CAPs2(long efuncs, const cpool_method_t *const method, int *nfuncs)
 	if (!(libeCAPs & eCAP_F_DYNAMIC))
 		libeCAPs |= eCAP_F_FIXED;
 	
-	if (METHOD_HAS(method, cache_get))
+	if (method->me.cache_get)
 		libeCAPs |= eCAP_F_ROUTINE;
 	
-	if (METHOD_HAS(method, wait_all))
+	if (method->me.wait_all)
 		libeCAPs |= eCAP_F_WAIT_ALL;
 		
-	if (eFUNC_F_EXTEND & efuncs) {
-		if (METHOD_EX_HAS(method, throttle_enable))
-			libeCAPs |= eCAP_F_THROTTLE;
+	if (method->me.throttle_enable)
+		libeCAPs |= eCAP_F_THROTTLE;
 
-		if (METHOD_EX_HAS(method, wait_any))
-			libeCAPs |= eCAP_F_WAIT_ANY;
-		
-		if (METHOD_EX_HAS(method, wait_any2))
-			libeCAPs |= eCAP_F_TASK_WAIT_ANY;
-		
-		if (METHOD_EX_HAS(method, task_wait))
-			libeCAPs |= eCAP_F_TASK_WAIT|eCAP_F_WAIT_ALL;
-		
-		if (nfuncs)
-			*nfuncs += __count_funcs((int *)&method->extme, sizeof(method->extme)/sizeof(void *));
-	}
-
+	if (method->me.wait_any)
+		libeCAPs |= eCAP_F_WAIT_ANY;
+	
+	if (method->me.wait_any2)
+		libeCAPs |= eCAP_F_TASK_WAIT_ANY;
+	
+	if (method->me.task_wait)
+		libeCAPs |= eCAP_F_TASK_WAIT|eCAP_F_WAIT_ALL;
+	
 	if (eFUNC_F_ADVANCE & efuncs) {
-		if (METHOD_ADV_HAS(method, group_wait_any))
+		if (method->advme.group_wait_any)
 			libeCAPs |= eCAP_F_GROUP_WAIT_ANY;
 		
-		if (METHOD_ADV_HAS(method, group_wait_all))
+		if (method->advme.group_wait_all)
 			libeCAPs |= eCAP_F_GROUP_WAIT_ALL;
 		
-		if (METHOD_ADV_HAS(method, group_throttle_enable))
+		if (method->advme.group_throttle_enable)
 			libeCAPs |= eCAP_F_GROUP_THROTTLE;
 		
-		if (METHOD_ADV_HAS(method, group_suspend))
+		if (method->advme.group_suspend)
 			libeCAPs |= eCAP_F_GROUP_SUSPEND;
 
 		if (nfuncs)
-			*nfuncs += __count_funcs((int *)&method->extme, sizeof(method->advme)/sizeof(void *));
+			*nfuncs += __count_funcs((int *)&method->advme, sizeof(method->advme)/sizeof(void *));
 	}
 
 	return libeCAPs;
@@ -184,17 +221,19 @@ __stpool_task_INIT(ctask_t *ptsk, const char *name,
 static inline int 
 __stpool_task_set_p(ctask_t *ptask, cpool_t *pool)
 {
-	int e;
+	int e = 0;
 	assert (!ptask->ref);
 	
-	if (pool && ME_HAS(pool, task_init) &&
-		(e = ME_CALL(pool, task_init)(pool->ins, ptask)))
-		return e;
+	if (pool && Invokable(task_init, pool))
+		e = Invoke(task_init, pool, ptask);
+	
+	if (!e) {
+		ptask->f_vmflags &= ~eTASK_VM_F_DISABLE_QUEUE;
+		ptask->f_vmflags |= eTASK_VM_F_ENABLE_QUEUE;
+		ptask->pool = pool;	
+	}
 
-	ptask->f_vmflags &= ~eTASK_VM_F_DISABLE_QUEUE;
-	ptask->f_vmflags |= eTASK_VM_F_ENABLE_QUEUE;
-	ptask->pool = pool;	
-	return 0;
+	return e;
 }
 
 extern smcache_t *___smc;
@@ -217,8 +256,8 @@ __stpool_cache_get(stpool_t *pool)
 {
 	ctask_t *ptask = NULL;
 	
-	if (pool && ME_HAS(pool, cache_get)) {
-		if ((ptask = ME_CALL(pool, cache_get)(pool->ins)))
+	if (pool && Invokable(cache_get, pool)) {
+		if ((ptask = Invoke(cache_get, pool)))
 			ptask->pool = pool;
 	
 	} else {
@@ -243,8 +282,8 @@ __stpool_cache_get(stpool_t *pool)
 static inline void 
 __stpool_cache_put(stpool_t *pool, ctask_t *ptask)
 {
-	if (pool && ME_HAS(pool, cache_get))
-		ME_CALL(pool, cache_put)(pool->ins, ptask);
+	if (pool && Invokable(cache_get, pool))
+		Invoke(cache_put, pool, ptask);
 	else
 		smcache_add_dir(___smc, ptask);
 }

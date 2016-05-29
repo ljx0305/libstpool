@@ -1,3 +1,6 @@
+INSTALL_DIR=
+STRIP_LIB=yes
+
 .PHONY:all LIBS clean distclean install uninstall
 
 include complier.mk features.mk

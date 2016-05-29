@@ -28,12 +28,12 @@ stpool_task_set_gid(struct sttask *ptask, int gid)
 		(TASK_CAST_DOWN(ptask)->f_stat || TASK_CAST_DOWN(ptask)->ref)) {
 		ctask_t *ptask0 = TASK_CAST_DOWN(ptask);
 		
-		if (ME_ADV_HAS(ptask0->pool, group_create)) { 
+		if (InvokableG(group_create, ptask0->pool)) { 
 			/**
 			 * Try synchronize the env
 			 */
-			if (ME_EX_HAS(ptask0->pool, task_wsync))
-				ME_EX_CALL(ptask0->pool, task_wsync)(ptask0->pool->ins, ptask0);
+			if (Invokable(task_wsync, ptask0->pool))
+				Invoke(task_wsync, ptask0->pool, ptask0);
 			
 			if (ptask0->f_stat || ptask0->ref)
 				MSG_log(M_POOL, LOG_WARN,
@@ -115,8 +115,8 @@ stpool_group_create(stpool_t *pool, const char *name, struct gscheduler_attr *at
 {
 	int group_id = -1;
 
-	if (ME_ADV_HAS(pool, group_create)) {
-		group_id = ME_ADV_CALL(pool, group_create)(pool->ins, name, pri_q_num, suspend);
+	if (InvokableG(group_create, pool)) {
+		group_id = InvokeG(group_create, pool, name, pri_q_num, suspend);
 
 		if (-1 != group_id && attr)
 			stpool_group_setattr(pool, group_id, attr);
@@ -131,16 +131,16 @@ stpool_group_id(stpool_t *pool, const char *name)
 	if (!strcmp(name, stpool_desc(pool)))
 		return 0;
 
-	if (!ME_ADV_HAS(pool, group_id)) 
+	if (!InvokableG(group_id, pool)) 
 		return -1;
 	
-	return ME_ADV_CALL(pool, group_id)(pool->ins, name);
+	return InvokeG(group_id, pool, name);
 }
 
 EXPORT const char *
 stpool_group_name2(stpool_t *pool, int gid, char *name_buffer, int len)
 {
-	if (!gid && !ME_ADV_HAS(pool, group_create)) {
+	if (!gid && !InvokableG(group_create, pool)) {
 		const char *desc = stpool_desc(pool);
 
 		if (name_buffer) {
@@ -149,11 +149,8 @@ stpool_group_name2(stpool_t *pool, int gid, char *name_buffer, int len)
 		}
 		return desc;
 	}
-
-	if (!ME_ADV_HAS(pool, group_desc)) 
-		return NULL;
 	
-	return ME_ADV_CALL(pool, group_desc)(pool->ins, gid, name_buffer, len);
+	TRY_InvokeG_return_res(NULL, group_desc, pool, gid, name_buffer, len);
 }
 
 EXPORT struct sttask_group_stat *
@@ -161,7 +158,7 @@ stpool_group_stat(stpool_t *pool, int gid, struct sttask_group_stat *stat)
 {
 	struct ctask_group_stat gstat;
 
-	if (!ME_ADV_HAS(pool, group_create)) {
+	if (!InvokableG(group_create, pool)) {
 		struct pool_stat pstat;
 
 		if (gid)
@@ -185,7 +182,7 @@ stpool_group_stat(stpool_t *pool, int gid, struct sttask_group_stat *stat)
 		return stat;
 	}
 	
-	ME_ADV_CALL(pool, group_stat)(pool->ins, gid, &gstat);
+	InvokeG(group_stat, pool, gid, &gstat);
 
 	assert (sizeof(*stat) == sizeof(gstat));
 	memcpy(stat, &gstat, sizeof(*stat));
@@ -199,7 +196,7 @@ stpool_group_stat_all(stpool_t *pool, struct sttask_group_stat **stat)
 	int n = 0;
 	struct ctask_group_stat *gstat;
 
-	if (!ME_ADV_HAS(pool, group_create)) {
+	if (!InvokableG(group_create, pool)) {
 		*stat = malloc(sizeof(struct sttask_group_stat));
 		
 		if (*stat) {
@@ -208,7 +205,7 @@ stpool_group_stat_all(stpool_t *pool, struct sttask_group_stat **stat)
 		}
 
 	} else {
-		n = ME_ADV_CALL(pool, group_stat_all)(pool->ins, &gstat);
+		n = InvokeG(group_stat_all, pool, &gstat);
 		*stat = (struct sttask_group_stat *)gstat;
 	}
 	
@@ -220,7 +217,7 @@ stpool_group_setattr(stpool_t *pool, int gid, struct gscheduler_attr *attr)
 {
 	struct scheduler_attr attr0;
 	
-	if (!gid && !ME_ADV_HAS(pool, group_create)) {
+	if (!gid && !InvokableG(group_create, pool)) {
 		if (attr->limit_paralle_tasks <= 0)
 			attr->limit_paralle_tasks = 1;
 
@@ -228,7 +225,7 @@ stpool_group_setattr(stpool_t *pool, int gid, struct gscheduler_attr *attr)
 		return;
 	}
 
-	if (!ME_ADV_HAS(pool, group_setattr))
+	if (!InvokableG(group_setattr, pool))
 		return;
 	
 	MSG_log(M_POOL, LOG_INFO,
@@ -236,7 +233,7 @@ stpool_group_setattr(stpool_t *pool, int gid, struct gscheduler_attr *attr)
 		   pool->desc, pool, gid, attr->limit_paralle_tasks);
 		
 	memcpy(&attr0, attr, sizeof(*attr));
-	ME_ADV_CALL(pool, group_setattr)(pool->ins, gid, &attr0);
+	InvokeG(group_setattr, pool, gid, &attr0);
 }
 
 EXPORT struct gscheduler_attr *
@@ -244,7 +241,7 @@ stpool_group_getattr(stpool_t *pool, int gid, struct gscheduler_attr *attr)
 {
 	struct scheduler_attr attr0;
 	
-	if (!gid && !ME_ADV_HAS(pool, group_create)) {
+	if (!gid && !InvokableG(group_create, pool)) {
 		struct pool_stat pstat;
 
 		stpool_stat(pool, &pstat);
@@ -253,7 +250,7 @@ stpool_group_getattr(stpool_t *pool, int gid, struct gscheduler_attr *attr)
 		return attr;
 	}
 
-	if (!ME_ADV_HAS(pool, group_getattr) || ME_ADV_CALL(pool, group_getattr)(pool->ins, gid, &attr0)) 
+	if (!InvokableG(group_getattr, pool) || InvokeG(group_getattr, pool, gid, &attr0)) 
 		return NULL;
 
 	memcpy(attr, &attr0, sizeof(*attr));
@@ -269,16 +266,12 @@ stpool_group_suspend(stpool_t *pool, int gid, long ms)
 		"{\"%s\"/%p} suspend group(%d) ...(%ld ms)\n",
 		pool->desc, pool, gid, ms);
 	
-	if (!gid && !ME_ADV_HAS(pool, group_create))
-		return stpool_suspend(pool, ms);
-
-	if (!ME_ADV_HAS(pool, group_suspend))
-		return POOL_ERR_NSUPPORT;
-
-	if ((e=ME_ADV_CALL(pool, group_suspend)(pool->ins, gid, ms)))
-		return __stpool_liberror(e);
+	if (!gid && !InvokableG(group_create, pool))
+		e = stpool_suspend(pool, ms);
+	else
+		TRY_InvokeG_err(e, group_suspend, pool, gid, ms);
 	
-	return 0;
+	return e;
 }
 
 EXPORT int
@@ -290,16 +283,12 @@ stpool_group_suspend_all(stpool_t *pool, long ms)
 		"{\"%s\"/%p} suspend all groups ...(%d ms)\n",
 		pool->desc, pool, ms);
 	
-	if (!ME_ADV_HAS(pool, group_create))
+	if (!InvokableG(group_create, pool))
 		return stpool_suspend(pool, ms);
 
-	if (!ME_ADV_HAS(pool, group_suspend_all))
-		return POOL_ERR_NSUPPORT;
+	TRY_InvokeG_err(e, group_suspend_all, pool, ms);
 	
-	if ((e=ME_ADV_CALL(pool, group_suspend_all)(pool->ins, ms)))
-		return __stpool_liberror(e);
-	
-	return 0;
+	return e;
 }
 
 EXPORT void 
@@ -309,11 +298,10 @@ stpool_group_resume(stpool_t *pool, int gid)
 		"{\"%s\"/%p} resume group(%d) ...\n",
 		pool->desc, pool, gid);
 	
-	if (!gid && !ME_ADV_HAS(pool, group_create))
+	if (!gid && !InvokableG(group_create, pool))
 		stpool_resume(pool);
-
-	else if (ME_ADV_HAS(pool, group_resume))
-		ME_ADV_CALL(pool, group_resume)(pool->ins, gid);
+	else 
+		TRY_InvokeG(group_resume, pool, gid);
 }
 
 EXPORT void 
@@ -323,11 +311,10 @@ stpool_group_resume_all(stpool_t *pool)
 		"{\"%s\"/%p} resume all groups ...\n",
 		pool->desc, pool);
 	
-	if (!ME_ADV_HAS(pool, group_create))
+	if (!InvokableG(group_create, pool))
 		stpool_resume(pool);
-
-	else if (ME_ADV_HAS(pool, group_resume_all))
-		ME_ADV_CALL(pool, group_resume_all)(pool->ins);
+	else 
+		TRY_InvokeG(group_resume_all, pool);
 }
 
 EXPORT int  
@@ -339,7 +326,7 @@ stpool_group_add_routine(stpool_t *pool, int gid, const char *name,
 	int e;
 	ctask_t *ptask;
 	
-	if (!ME_ADV_HAS(pool, group_create)) {
+	if (!InvokableG(group_create, pool)) {
 		if (gid)
 			return POOL_ERR_GROUP_NOT_FOUND;	
 	
@@ -376,19 +363,18 @@ stpool_group_remove_all(stpool_t *pool, int gid, int dispatched_by_pool)
 {
 	long lflags = dispatched_by_pool ? eTASK_VM_F_REMOVE_BYPOOL : eTASK_VM_F_REMOVE;
 	
-	if (!gid && !ME_ADV_HAS(pool, group_create))
+	if (!gid && !InvokableG(group_create, pool))
 		return stpool_remove_all(pool, dispatched_by_pool);
 
-	if (ME_ADV_HAS(pool, group_remove_all)) {
+	if (InvokableG(group_remove_all, pool)) {
 		MSG_log(M_POOL, LOG_INFO,
 			"{\"%s\"/%p} Marking all group(%d)'s tasks (%d)...\n",
 			pool->desc, pool, gid, dispatched_by_pool);
 
-		return ME_ADV_CALL(pool, group_remove_all)(pool->ins, gid, dispatched_by_pool);
+		return InvokeG(group_remove_all, pool, gid, dispatched_by_pool);
 	
-	} else if (ME_ADV_HAS(pool, group_mark_all))
-		
-		return ME_ADV_CALL(pool, group_mark_all)(pool->ins, gid, lflags);
+	} else if (InvokableG(group_mark_all, pool))
+		return InvokeG(group_mark_all, pool, gid, lflags);
 	else
 		return 0;
 }
@@ -400,25 +386,25 @@ stpool_group_mark_all(stpool_t *pool, int gid, long lflags)
 			"{\"%s\"/%p} Marking all group(%d)'s tasks with %p ...\n",
 			pool->desc, pool, gid, lflags);
 	
-	if (!gid && !ME_ADV_HAS(pool, group_create))
+	if (!gid && !InvokableG(group_create, pool))
 		return stpool_mark_all(pool, lflags);
 
-	if (!ME_ADV_HAS(pool, group_mark_all))
+	if (!InvokableG(group_mark_all, pool))
 		return POOL_ERR_NSUPPORT;
 	
-	return ME_ADV_CALL(pool, group_mark_all)(pool->ins, gid, lflags);
+	return InvokeG(group_mark_all, pool, gid, lflags);
 }
 
 EXPORT int  
 stpool_group_mark_cb(stpool_t *pool, int gid, Walk_cb wcb, void *wcb_arg)
 {
-	if (!gid && !ME_ADV_HAS(pool, group_create))
+	if (!gid && !InvokableG(group_create, pool))
 		return stpool_mark_cb(pool, wcb, wcb_arg);
 
-	if (!ME_ADV_HAS(pool, group_mark_cb))
+	if (!InvokableG(group_mark_cb, pool))
 		return POOL_ERR_NSUPPORT;
 	
-	return ME_ADV_CALL(pool, group_mark_cb)(pool->ins, gid, (Visit_cb)wcb, wcb_arg);
+	return InvokeG(group_mark_cb, pool, gid, (Visit_cb)wcb, wcb_arg);
 }
 
 EXPORT int  
@@ -428,37 +414,35 @@ stpool_group_wait_all(stpool_t *pool, int gid, long ms)
 			"{\"%s\"/%p} Start waiting for all group(%d) tasks's being done ... (%ld ms)\n",
 			pool->desc, pool, gid, ms);
 	
-	if (!gid && !ME_ADV_HAS(pool, group_create))
+	if (!gid && !InvokableG(group_create, pool))
 		return stpool_wait_all(pool, ms);
-
-	if (!ME_ADV_HAS(pool, group_wait_all))
-		return POOL_ERR_NSUPPORT;
 	
-	return ME_ADV_CALL(pool, group_wait_all)(pool->ins, gid, ms);
+	TRY_InvokeG_return_res(POOL_ERR_NSUPPORT, group_wait_all, pool, gid, ms); 
 }
 
 EXPORT int  
 stpool_group_wait_cb(stpool_t *pool, int gid, Walk_cb wcb, void *wcb_arg, long ms)
 {
-	if (!gid && !ME_ADV_HAS(pool, group_create))
+	if (!gid && !InvokableG(group_create, pool))
 		return stpool_wait_cb(pool, wcb, wcb_arg, ms);
 
-	if (!ME_ADV_HAS(pool, group_wait_cb)) 
+	if (!InvokableG(group_wait_cb, pool)) 
 		return POOL_ERR_NSUPPORT;
 	
-	return ME_ADV_CALL(pool, group_wait_cb)(pool->ins, gid, (Visit_cb)wcb, wcb_arg, ms);
+	return InvokeG(group_wait_cb, pool, gid, (Visit_cb)wcb, wcb_arg, ms);
 }
 
 EXPORT int  
 stpool_group_wait_any(stpool_t *pool, int gid, long ms)
 {
-	if (!gid && !ME_ADV_HAS(pool, group_create))
-		return stpool_wait_any(pool, ms);
+	int e;
 
-	if (!ME_ADV_HAS(pool, group_wait_any))
-		return POOL_ERR_NSUPPORT;
+	if (!gid && !InvokableG(group_create, pool))
+		e = stpool_wait_any(pool, ms);
+	else
+		TRY_InvokeG_err(e, group_wait_any, pool, gid, ms);
 	
-	return ME_ADV_CALL(pool, group_wait_any)(pool->ins, gid, ms);
+	return e;
 }
 
 EXPORT void
@@ -468,29 +452,24 @@ stpool_group_throttle_enable(stpool_t *pool, int gid, int enable)
 			"{\"%s\"/%p} %s the group(%d)'s throttle ...\n",
 			pool->desc, pool, enable ? "ENABLING" : "DISABLING", gid);
 	
-	if (!gid && !ME_ADV_HAS(pool, group_create))
+	if (!gid && !InvokableG(group_create, pool))
 		stpool_throttle_enable(pool, enable);
-
-	if (ME_ADV_HAS(pool, group_throttle_enable))
-		ME_ADV_CALL(pool, group_throttle_enable)(pool->ins, gid, enable);
+	else
+		TRY_InvokeG(group_throttle_enable, pool, gid, enable);
 }
 
 EXPORT int 
 stpool_group_throttle_wait(stpool_t *pool, int gid, long ms)
 {
-	if (!gid && !ME_ADV_HAS(pool, group_create))
+	if (!gid && !InvokableG(group_create, pool))
 		return stpool_throttle_wait(pool, ms);
-
-	if (!ME_ADV_HAS(pool, group_throttle_wait))
-		return 0;
-	
-	return ME_ADV_CALL(pool, group_throttle_wait)(pool->ins, gid, ms);
+		
+	TRY_InvokeG_return_res(0, group_throttle_wait, pool, gid, ms);
 }
 
 EXPORT void 
 stpool_group_delete(stpool_t *pool, int gid)
 {
-	if (ME_ADV_HAS(pool, group_delete))
-		ME_ADV_CALL(pool, group_delete)(pool->ins, gid);
+	TRY_InvokeG(group_delete, pool, gid);
 }
 	

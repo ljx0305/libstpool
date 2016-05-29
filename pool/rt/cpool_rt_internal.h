@@ -14,40 +14,36 @@
 #include "cpool_factory.h"
 
 static inline void 
-__cpool_rt_task_queue(cpool_core_t *core, ctask_t *ptask)
+__cpool_rt_task_queue(cpool_rt_t *rtp, ctask_t *ptask)
 {
-	cpool_rt_t *rtp = core->priv;
-
 	ptask->f_stat = eTASK_STAT_F_WAITING;
 
-	OSPX_pthread_mutex_lock(&core->mut);
+	OSPX_pthread_mutex_lock(&rtp->core->mut);
 	list_add_tail(&ptask->link, &rtp->ready_q);
-	++ core->npendings;
+	++ rtp->core->npendings;
 	/**
 	 * wake up threads to schedule tasks
 	 */
-	if (cpool_core_need_ensure_servicesl(core) && !core->paused) 
-		cpool_core_ensure_servicesl(core, NULL);
-	OSPX_pthread_mutex_unlock(&core->mut);
+	if (cpool_core_need_ensure_servicesl(rtp->core) && !rtp->core->paused) 
+		cpool_core_ensure_servicesl(rtp->core, NULL);
+	OSPX_pthread_mutex_unlock(&rtp->core->mut);
 }
 
 static inline void
-__cpool_rt_pri_task_queue(cpool_core_t *core, ctask_t *ptask) 
+__cpool_rt_pri_task_queue(cpool_rt_t *rtp, ctask_t *ptask) 
 {		
-	cpool_rt_t *rtp = core->priv;
-	
 	ptask->f_stat = eTASK_STAT_F_WAITING;
 	__cpool_com_task_nice_preprocess(&rtp->c, ptask);
 	
-	OSPX_pthread_mutex_lock(&core->mut);
+	OSPX_pthread_mutex_lock(&rtp->core->mut);
 	__cpool_com_priq_insert(&rtp->c, ptask);
-	++ core->npendings;
+	++ rtp->core->npendings;
 	/**
 	 * Create more threads to provide services
 	 */
-	if (cpool_core_need_ensure_servicesl(core) && !core->paused) 
-		cpool_core_ensure_servicesl(core, NULL);
-	OSPX_pthread_mutex_unlock(&core->mut);
+	if (cpool_core_need_ensure_servicesl(rtp->core) && !rtp->core->paused) 
+		cpool_core_ensure_servicesl(rtp->core, NULL);
+	OSPX_pthread_mutex_unlock(&rtp->core->mut);
 }
 
 static inline void

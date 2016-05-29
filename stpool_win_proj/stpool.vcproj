@@ -373,25 +373,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pool\rt\cpool_rt_struct.h"
-				>
-			</File>
-			<File
-				RelativePath="..\pool\cpool_wait.h"
-				>
-			</File>
-			<File
-				RelativePath="..\pool\core\list.h"
-				>
-			</File>
-			<File
-				RelativePath="..\pool\core\objpool.h"
-				>
-			</File>
-			<File
-				RelativePath="..\pool\core\ospx.h"
-				>
-			</File>
 			<File
 				RelativePath="..\pool\core\ospx_compatible.h"
 				>
@@ -467,10 +448,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pool\gp\cpool_gp_extend_method.c"
-				>
-			</File>
-			<File
 				RelativePath="..\pool\gp\cpool_gp_factory.c"
 				>
 			</File>
@@ -488,10 +465,6 @@
 			</File>
 			<File
 				RelativePath="..\pool\rt\cpool_rt_core_method.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pool\rt\cpool_rt_extend_method.c"
 				>
 			</File>
 			<File

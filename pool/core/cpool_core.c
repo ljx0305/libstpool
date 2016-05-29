@@ -122,11 +122,11 @@ cpool_core_ctor(cpool_core_t *core, const char *desc, const cpool_core_method_t 
 	core->randtimeo = 1000 * 30;
 	core->eReasons0 = eReason_ok;
 	core->eReasons1 = eReason_removed;
-
+	
 	/**
 	 * Call method::ctor to construct the underlying context 
 	 */
-	if (core->me->ctor && (e = core->me->ctor(core))) {
+	if (core->me->ctor && (e = core->me->ctor(core->priv))) {
 		MSG_log2(M_CORE, LOG_ERR,
 			"Method::ctor error(%d).",
 			e);
@@ -207,7 +207,7 @@ cpool_core_setstatus(cpool_core_t *core, long status, int synchronized)
  * A Register for the exiting callback 
  */
 void
-cpool_core_atexit(cpool_core_t *core, void (*atexit_func)(cpool_core_t *, void *), void *arg) 
+cpool_core_atexit(cpool_core_t *core, void (*atexit_func)(void *), void *arg) 
 {
 	assert (CORE_F_created & core->status);
 	core->atexit = atexit_func;
@@ -240,7 +240,7 @@ cpool_core_load_envl(cpool_core_t *core)
 }
 
 void 
-cpool_core_free(cpool_core_t *core) 
+cpool_core_dtor(cpool_core_t *core) 
 {	
 	assert (list_empty(&core->ths) &&
 		   !core->nthreads_running &&
@@ -252,7 +252,7 @@ cpool_core_free(cpool_core_t *core)
 	 * Call Method::dtor to free the underlying context 
 	 */
 	if (core->me->dtor)
-		core->me->dtor(core);
+		core->me->dtor(core->priv);
 	
 	cpool_core_GC_deinit(core);
 
@@ -288,15 +288,17 @@ cpool_core_free(cpool_core_t *core)
 	
 	OSPX_pthread_mutex_destroy(&core->mut);
 	OSPX_pthread_cond_destroy(&core->cond_ths);
+	
+	/**
+	 * Call the atexit
+	 */
+	core->atexit(core->atexit_arg);
 }
 
 long 
 cpool_core_release_ex(cpool_core_t *core, int is_wrthread, int clean)
 {
-	long ref;
-	void (*__hook_atexit)(cpool_core_t *, void *);
-	void *__hook_atexit_arg;
-	
+	long ref;	
 	static cache_attr_t attr = {
 		0    /** cache 0 objects */,  
 		0    /** wakeup throttle: 0 */,
@@ -328,7 +330,7 @@ cpool_core_release_ex(cpool_core_t *core, int is_wrthread, int clean)
 		 * Notify all tasks that the core is going to be destroyed 
 		 */
 		if (core->me->notifyl)
-			core->me->notifyl(core, eEvent_F_destroying);
+			core->me->notifyl(core->priv, eEvent_F_destroying);
 		
 		/**
 		 * Adjust the cache attribute 
@@ -375,7 +377,7 @@ cpool_core_release_ex(cpool_core_t *core, int is_wrthread, int clean)
 		 */
 		if (core->me->notifyl) {
 			OSPX_pthread_mutex_lock(&core->mut);
-			core->me->notifyl(core, eEvent_F_shutdown);
+			core->me->notifyl(core->priv, eEvent_F_shutdown);
 			OSPX_pthread_mutex_unlock(&core->mut);
 		}
 
@@ -417,19 +419,8 @@ cpool_core_release_ex(cpool_core_t *core, int is_wrthread, int clean)
 		 * Clear the task cache 
 		 */
 		smcache_flush(core->cache_task, 0);
-		
-		/**
-		 * Save the exit func
-		 */
-		__hook_atexit = core->atexit;
-		__hook_atexit_arg = core->atexit_arg;
-
-		cpool_core_free(core);
-		/**
-		 * Call the exit function 
-		 */
-		if (__hook_atexit) 
-			__hook_atexit(core, __hook_atexit_arg);
+			
+		cpool_core_dtor(core);
 	}
 
 	return ref;
@@ -464,7 +455,7 @@ cpool_core_adjust_abs_l(cpool_core_t *core, int maxthreads, int minthreads)
 	 * Notify the underlying context 
 	 */
 	if (core->me->notifyl)
-		core->me->notifyl(core, eEvent_F_thread);
+		core->me->notifyl(core->priv, eEvent_F_thread);
 	
 	if (core->minthreads > core->nthreads_real_pool) {
 		nthreads = core->minthreads - core->nthreads_real_pool;
@@ -725,7 +716,7 @@ do_create_threads(thread_t *self)
 static inline int
 cpool_core_gettask(cpool_core_t *core, thread_t *self)
 {
-	if (core->me->gettask(core, self)) {
+	if (core->me->gettask(core->priv, self)) {
 		/**
 		 * Remove the GC flag
 		 *
@@ -810,7 +801,7 @@ cpool_core_schedule(cpool_core_t *core, thread_t *self)
 			/**
 			 * Notify the underlying pool that we have done the task
 			 */
-			core->me->finished(core, self, __curtask, core->eReasons0);
+			core->me->finished(core->priv, self, __curtask, core->eReasons0);
 
 		} else if (self->task_type == TASK_TYPE_DISPATCHED) {
 			while (!list_empty(&self->dispatch_q)) {
@@ -828,7 +819,7 @@ cpool_core_schedule(cpool_core_t *core, thread_t *self)
 				/**
 				 * Notify the underlying pool that we have done the task
 				 */
-				core->me->finished(core, self, __curtask, core->eReasons1);
+				core->me->finished(core->priv, self, __curtask, core->eReasons1);
 			}
 		
 		} else {
@@ -1128,7 +1119,7 @@ cpool_core_suspendl(cpool_core_t *core)
 			core->desc, core, core->npendings, core->nthreads_running, core->n_qdispatchs, core->n_qths);
 
 		if (core->me->notifyl)
-			core->me->notifyl(core, eEvent_F_core_suspend);
+			core->me->notifyl(core->priv, eEvent_F_core_suspend);
 	}
 }
 
@@ -1144,7 +1135,7 @@ cpool_core_resume(cpool_core_t *core)
 			core->desc, core, core->npendings, core->nthreads_running, core->n_qdispatchs, core->n_qths);
 	
 		if (core->me->notifyl)
-			core->me->notifyl(core, eEvent_F_core_resume);
+			core->me->notifyl(core->priv, eEvent_F_core_resume);
 
 		/**
 		 * Notify the server threads that we are ready now. 

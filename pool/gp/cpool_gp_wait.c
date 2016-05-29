@@ -131,7 +131,7 @@ __cpool_gp_w_waitl(cpool_gp_t *gpool, long type, int id, void *arg, long ms)
 				 * If there are any task who does not belong to our pool, we 
 				 * return an error imediately 
 				 */
-				if (ptasks[idx]->pool->ins != gpool->core)
+				if (ptasks[idx]->pool->ins != (void *)gpool)
 					return eTASK_ERR_DESTINATION;
 	
 				/**
@@ -286,7 +286,7 @@ __cpool_gp_w_waitl(cpool_gp_t *gpool, long type, int id, void *arg, long ms)
 				if (!ptask->f_stat)
 					e = 0;
 
-				assert (ptask->pool->ins == gpool->core && ptask->ref > 0);
+				assert (ptask->pool->ins == (void *)gpool && ptask->ref > 0);
 				
 				/**
 				 * We decrease the references of the task if it belongs to our pool. 
@@ -463,7 +463,7 @@ __cpool_gp_w_wait_cbl(cpool_gp_t *gpool, int entry_id, long type, Visit_cb cb, v
 
 	do {	
 		/**
-		 * If the pool is being destroying, we show a log message
+		 * If the pool is being destroyed, we show a log message
 		 */
 		if (!(CORE_F_created & cpool_core_statusl(gpool->core))) {
 			if (CORE_F_destroying & cpool_core_statusl(gpool->core)) {
@@ -603,7 +603,7 @@ __cpool_gp_w_wait_cbl(cpool_gp_t *gpool, int entry_id, long type, Visit_cb cb, v
 			}
 			case (WAIT_CLASS_POOL|WAIT_TYPE_TASK_ANY2): 
 				for (idx=0, ok=0; idx<entry_id; idx++) {
-					if (!ptasks[idx] || (ptasks[idx]->f_stat && ptasks[idx]->pool->ins != gpool->core))
+					if (!ptasks[idx] || (ptasks[idx]->f_stat && ptasks[idx]->pool->ins != (void *)gpool))
 						continue;
 
 					if (!ptasks[idx]->f_stat)

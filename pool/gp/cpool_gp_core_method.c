@@ -15,13 +15,13 @@
 #include "cpool_gp_wait_internal.h"
 
 int  
-cpool_gp_core_ctor(cpool_core_t *core)
+cpool_gp_core_ctor(void *priv)
 {
-	cpool_gp_t *gpool = core->priv;
+	cpool_gp_t *gpool = priv;
 	
 	MSG_log(M_GROUP, LOG_INFO,
 		"Creating group pool {\"%s\"/%p} ...\n",
-		core->desc, core->priv);
+		gpool->core->desc, priv);
 
 	gpool->entry_idx_max = MAX_WAIT_ENTRY;
 	
@@ -40,7 +40,7 @@ cpool_gp_core_ctor(cpool_core_t *core)
 	/**
 	 * Create the default entry
 	 */
-	if ((0 > cpool_gp_entry_create(gpool->core, "sys00", gpool->priq_num, 0))) { 
+	if ((0 > cpool_gp_entry_create(gpool, "sys00", gpool->priq_num, 0))) { 
 		errno = ENOMEM;
 		goto free_cond_sync;
 	}
@@ -66,15 +66,15 @@ free_cond_ev:
 }
 
 void 
-cpool_gp_core_dtor(cpool_core_t *core)
+cpool_gp_core_dtor(void *priv)
 {
 	int idx;
 	ctask_entry_t *entry;
-	cpool_gp_t *gpool = core->priv;
+	cpool_gp_t *gpool = priv;
 	
 	MSG_log(M_GROUP, LOG_INFO,
 		"Destroying group pool {\"%s\"/%p} ...\n",
-		core->desc, core->priv);
+		gpool->core->desc, priv);
 	
 	/*
 	 * Delete all entries
@@ -83,7 +83,7 @@ cpool_gp_core_dtor(cpool_core_t *core)
 		entry = gpool->entry + idx;
 
 		if (!(SLOT_F_FREE & entry->lflags))
-			cpool_gp_entry_delete(core, entry->id);
+			cpool_gp_entry_delete(gpool, entry->id);
 
 		assert (entry->lflags & SLOT_F_FREE);
 		if (entry->c.priq)
@@ -101,20 +101,20 @@ cpool_gp_core_dtor(cpool_core_t *core)
 	OSPX_pthread_cond_destroy(&gpool->cond_ev);
 }
 
-void cpool_gp_core_notifyl(cpool_core_t *core, eEvent_t events)
+void cpool_gp_core_notifyl(void *priv, eEvent_t events)
 {
 	int idx = 0;
 	ctask_entry_t *entry;
-	cpool_gp_t *gpool = core->priv;
+	cpool_gp_t *gpool = priv;
 
 #ifndef NDEBUG
 	MSG_log(M_GROUP, LOG_TRACE,
 		"{\"%s\"/%p} Received events(%p) from Core\n",
-		core->desc, core->priv, events);
+		gpool->core->desc, priv, events);
 #endif
 	
 	if (eEvent_F_thread & events) 
-		__cpool_gp_entry_update_all_envl(core->priv);
+		__cpool_gp_entry_update_all_envl(priv);
 
 	if (eEvent_F_destroying & events) {
 		__cpool_gp_entry_notifyl(gpool, NULL, eTASK_VM_F_POOL_DESTROYING);
@@ -124,7 +124,7 @@ void cpool_gp_core_notifyl(cpool_core_t *core, eEvent_t events)
 		 * We create service threads to dispatch the task in the background if 
 		 * there are one more swapped tasks existing in the pool. 
 		 */
-		if (core->paused) 
+		if (gpool->core->paused) 
 			__cpool_gp_entry_mark_cbl(gpool, NULL, NULL, (void *)eTASK_VM_F_REMOVE_BYPOOL, NULL);
 		
 		for (; idx<gpool->num; idx++) {
@@ -145,17 +145,17 @@ void cpool_gp_core_notifyl(cpool_core_t *core, eEvent_t events)
 		 * We can not make sure that all WAIT functions have returned 
 	 	 * completely, so we wake them up 
 		 */
-		OSPX_pthread_mutex_unlock(&core->mut);
+		OSPX_pthread_mutex_unlock(&gpool->core->mut);
 		cpool_gp_w_wakeup(gpool, WAIT_TYPE_ALL, -1);
-		OSPX_pthread_mutex_lock(&core->mut);
+		OSPX_pthread_mutex_lock(&gpool->core->mut);
 		/**
 		 * Synchronize the env 
 		 */
 		for (;gpool->tsk_wref || gpool->ev_wref;) {
 			MSG_log(M_GROUP, LOG_INFO,
 					"{\"%s\"/%p} tsk_wref(%d) ev_wref(%d) Synchronizing ...\n",
-					core->desc, gpool, gpool->tsk_wref, gpool->ev_wref);
-			OSPX_pthread_cond_wait(&gpool->cond_sync, &core->mut);
+					gpool->core->desc, gpool, gpool->tsk_wref, gpool->ev_wref);
+			OSPX_pthread_cond_wait(&gpool->cond_sync, &gpool->core->mut);
 		}
 	} 
 }
@@ -184,23 +184,23 @@ cpool_gp_core_err_reasons(basic_task_t *ptask)
 }
 
 int  
-cpool_gp_core_gettask(cpool_core_t *core, thread_t *self)
+cpool_gp_core_gettask(void *priv, thread_t *self)
 {
 	ctask_trace_t *ptask; 
-	cpool_gp_t *gpool = core->priv;
+	cpool_gp_t *gpool = priv;
 	
 	self->task_type = TASK_TYPE_NORMAL;
 	/**
 	 * We schedule the dispatching tasks firstly 
 	 */
-	OSPX_pthread_mutex_lock(&core->mut);
-	if (core->n_qdispatchs) {
-		gpool->ndispatchings += __cpool_com_get_dispatch_taskl3(core, self, gpool->n);
+	OSPX_pthread_mutex_lock(&gpool->core->mut);
+	if (gpool->core->n_qdispatchs) {
+		gpool->ndispatchings += __cpool_com_get_dispatch_taskl3(gpool->core, self, gpool->n);
 	#ifndef NDEBUG	
 		self->task_type = TASK_TYPE_DISPATCHED;
 	#endif	
-		cpool_core_thread_status_changel(core, self, THREAD_STAT_RUN);
-		OSPX_pthread_mutex_unlock(&core->mut);
+		cpool_core_thread_status_changel(gpool->core, self, THREAD_STAT_RUN);
+		OSPX_pthread_mutex_unlock(&gpool->core->mut);
 	
 		/**
 		 * Set the trace env 
@@ -218,7 +218,7 @@ cpool_gp_core_gettask(cpool_core_t *core, thread_t *self)
 	 * If there are none active tasks to be retreived by us,
 	 * we return 0.
 	 */
-	if (core->paused || !core->npendings) 
+	if (gpool->core->paused || !gpool->core->npendings) 
 		return 0;
 	
 	ptask = __cpool_gp_get_pending_task(gpool);
@@ -227,8 +227,8 @@ cpool_gp_core_gettask(cpool_core_t *core, thread_t *self)
 	self->current_task = TASK_CAST_CORE(ptask);
 #endif
 	++ gpool->entry[ptask->gid].nrunnings;
-	cpool_core_thread_status_changel(core, self, THREAD_STAT_RUN);
-	OSPX_pthread_mutex_unlock(&core->mut);
+	cpool_core_thread_status_changel(gpool->core, self, THREAD_STAT_RUN);
+	OSPX_pthread_mutex_unlock(&gpool->core->mut);
 	
 	/**
 	 * Set the trace env for the task before our's executing it
@@ -245,11 +245,11 @@ cpool_gp_core_gettask(cpool_core_t *core, thread_t *self)
 }
 
 void 
-cpool_gp_core_finished(cpool_core_t *core, thread_t *self, basic_task_t *ptask, long eReasons)
+cpool_gp_core_finished(void *priv, thread_t *self, basic_task_t *ptask, long eReasons)
 {
 	int reschedule = 1;
 	ctask_entry_t *entry;
-	cpool_gp_t *gpool = core->priv;
+	cpool_gp_t *gpool = priv;
 	ctask_trace_t *ptask0 = TASK_CAST_TRACE(ptask);
 
 	assert (self->task_type != TASK_TYPE_GC);
@@ -267,7 +267,7 @@ cpool_gp_core_finished(cpool_core_t *core, thread_t *self, basic_task_t *ptask, 
 	ptask0->thread = NULL;
 	__cpool_com_task_nice_adjust(TASK_CAST_FAC(ptask));
 	
-	OSPX_pthread_mutex_lock(&core->mut);	
+	OSPX_pthread_mutex_lock(&gpool->core->mut);	
 	entry = gpool->entry + ptask0->gid;
 	/**
 	 * We decrease the @ndispatchings if the task has been 
@@ -282,7 +282,7 @@ cpool_gp_core_finished(cpool_core_t *core, thread_t *self, basic_task_t *ptask, 
 		if (!entry->receive_benifits && !entry->paused && 
 			(entry->npendings_eff + entry->nrunnings) < entry->limit_tasks &&
 			entry->npendings_eff < entry->npendings) {
-			++ core->npendings;
+			++ gpool->core->npendings;
 			++ entry->npendings_eff;
 		}
 	} else {
@@ -290,8 +290,8 @@ cpool_gp_core_finished(cpool_core_t *core, thread_t *self, basic_task_t *ptask, 
 		-- entry->ndispatchings;
 		-- gpool->ndispatchings;
 	} 
-	assert (core->npendings >= 0 && core->n_qdispatchs >= 0 &&
-			gpool->n_qtraces >= gpool->ndispatchings + core->n_qdispatchs + gpool->npendings);
+	assert (gpool->core->npendings >= 0 && gpool->core->n_qdispatchs >= 0 &&
+			gpool->n_qtraces >= gpool->ndispatchings + gpool->core->n_qdispatchs + gpool->npendings);
 	
 	if (likely(!(eTASK_STAT_F_WPENDING & ptask0->f_stat))) {
 		reschedule = 0;
@@ -315,12 +315,12 @@ cpool_gp_core_finished(cpool_core_t *core, thread_t *self, basic_task_t *ptask, 
 		 * Free the temple task object if it is useless 
 		 */
 		if (likely((ptask0->f_vmflags & eTASK_VM_F_CACHE) && !ptask0->ref)) 
-			smcache_addl_dir(core->cache_task, ptask0);
+			smcache_addl_dir(gpool->core->cache_task, ptask0);
 		else 
 			ptask0->f_stat = 0;
 	}
 	if (list_empty(&self->dispatch_q))
-		cpool_core_thread_status_changel(core, self, THREAD_STAT_COMPLETE);		
+		cpool_core_thread_status_changel(gpool->core, self, THREAD_STAT_COMPLETE);		
 			
 	/**
 	 * We deliver the task into the pending queue if
@@ -331,6 +331,6 @@ cpool_gp_core_finished(cpool_core_t *core, thread_t *self, basic_task_t *ptask, 
 		if (!entry->paused)
 			__cpool_gp_entry_consumer_notifyl(gpool, entry);
 	}
-	OSPX_pthread_mutex_unlock(&core->mut);				
+	OSPX_pthread_mutex_unlock(&gpool->core->mut);				
 }
 

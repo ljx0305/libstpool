@@ -39,6 +39,7 @@ void task_run(struct sttask *ptask)
 
 	printf("\n\nRun %s\n", ptask->task_name);
 	
+	/** Sleep for a while to slow down the test */
 	msleep(1000);
 	
 	/** Reschedule the task */
@@ -62,7 +63,7 @@ int main()
 		{0, 40, ep_SCHE_BACK},
 		{0, 90, ep_SCHE_TOP},
 	};
-	long eCAPs = eCAP_F_THROTTLE|eCAP_F_PRIORITY|eCAP_F_WAIT_ALL;
+	long eCAPs = eCAP_F_SUSPEND|eCAP_F_ROUTINE|eCAP_F_PRIORITY|eCAP_F_THROTTLE|eCAP_F_WAIT_ALL;
 
 	/**
 	 * Creat a pool with 1 servering threads 

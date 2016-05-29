@@ -16,15 +16,15 @@
 #include "cpool_core_thread_status.h"
 
 int 
-cpool_rt_core_ctor(cpool_core_t *core)
+cpool_rt_core_ctor(void *priv)
 {
 	int e;
-	cpool_rt_t *rtp = core->priv;
+	cpool_rt_t *rtp = priv;
 	cache_attr_t attr;
 
 	MSG_log(M_RT, LOG_INFO,
 		"Creating rt pool(%s/%p) ... lflags(%p)\n",
-		core->desc, core->priv, rtp->lflags);
+		rtp->core->desc, priv, rtp->lflags);
 
 	if ((e=OSPX_pthread_cond_init(&rtp->cond_com))) {
 		MSG_log2(M_RT, LOG_ERR,
@@ -38,14 +38,14 @@ cpool_rt_core_ctor(cpool_core_t *core)
 	/**
 	 * We create the our objpool to provide cache services
 	 */
-	cpool_core_adjust_cachel(core, NULL, &attr);
-	if (objpool_ctor2(&core->objp_task, "FObjp-rt-local-cache", sizeof(ctask_t), 0,
+	cpool_core_adjust_cachel(rtp->core, NULL, &attr);
+	if (objpool_ctor2(&rtp->core->objp_task, "FObjp-rt-local-cache", sizeof(ctask_t), 0,
 				attr.nGC_cache, NULL)) {
 		MSG_log2(M_CORE, LOG_ERR,
 			"Fail to execute objpool_ctor.");
 		goto free_cond_com;
 	}
-	core->cache_task = objpool_get_cache(&core->objp_task);
+	rtp->core->cache_task = objpool_get_cache(&rtp->core->objp_task);
 	
 	/**
 	 * Initialize the priority queue
@@ -68,8 +68,8 @@ cpool_rt_core_ctor(cpool_core_t *core)
 	return 0;
 
 free_cache:
-	objpool_dtor(&core->objp_task);
-	core->cache_task = NULL;
+	objpool_dtor(&rtp->core->objp_task);
+	rtp->core->cache_task = NULL;
 
 free_cond_com:
 	OSPX_pthread_cond_destroy(&rtp->cond_com);
@@ -78,26 +78,26 @@ free_cond_com:
 }
 
 void 
-cpool_rt_core_dtor(cpool_core_t *core)
+cpool_rt_core_dtor(void *priv)
 {
-	cpool_rt_t *rtp = core->priv;
+	cpool_rt_t *rtp = priv;
 	
 	MSG_log(M_RT, LOG_INFO,
 		"Destroying rt pool(%s/%p) ...\n",
-		core->desc, core->priv);
+		rtp->core->desc, priv);
 	
 	assert (!rtp->tsk_wref && !rtp->ev_wref);
 
-	objpool_dtor(&core->objp_task);
+	objpool_dtor(&rtp->core->objp_task);
 	OSPX_pthread_cond_destroy(&rtp->cond_com);
 	if (rtp->priq)
 		free(rtp->priq);
 }
 
 void 
-cpool_rt_core_notifyl(cpool_core_t *core, eEvent_t events)
+cpool_rt_core_notifyl(void *priv, eEvent_t events)
 {
-	cpool_rt_t *rtp = core->priv;
+	cpool_rt_t *rtp = priv;
 
 #ifndef NDEBUG
 	MSG_log(M_RT, LOG_TRACE,
@@ -106,7 +106,7 @@ cpool_rt_core_notifyl(cpool_core_t *core, eEvent_t events)
 #endif
 	
 	if (events & eEvent_F_free) {
-		assert (cpool_core_all_donel(core));
+		assert (cpool_core_all_donel(rtp->core));
 	
 		if (rtp->tsk_need_notify && !rtp->tsks_held_by_dispatcher) {
 			rtp->tsk_need_notify = 0;
@@ -118,13 +118,13 @@ cpool_rt_core_notifyl(cpool_core_t *core, eEvent_t events)
 	}
 	
 	if (events & eEvent_F_core_resume) {
-		if (!(rtp->lflags & eFUNC_F_DYNAMIC_THREADS) && core->npendings) 
-			cpool_core_wakeup_n_sleeping_threadsl(core, core->npendings);
+		if (!(rtp->lflags & eFUNC_F_DYNAMIC_THREADS) && rtp->core->npendings) 
+			cpool_core_wakeup_n_sleeping_threadsl(rtp->core, rtp->core->npendings);
 	}
 	
 	if (events & eEvent_F_thread) {
 		if (!(rtp->lflags & eFUNC_F_DYNAMIC_THREADS)) 
-			core->minthreads = core->maxthreads;
+			rtp->core->minthreads = rtp->core->maxthreads;
 	}
 
 	if (events & eEvent_F_destroying) {
@@ -139,8 +139,8 @@ cpool_rt_core_notifyl(cpool_core_t *core, eEvent_t events)
 		 * queue, if the Core has been marked suspened, we should remove
 		 * all of the pending tasks.
 		 */
-		if (core->paused && core->npendings) {
-			core->n_qdispatchs += core->npendings;
+		if (rtp->core->paused && rtp->core->npendings) {
+			rtp->core->n_qdispatchs += rtp->core->npendings;
 
 			if (rtp->lflags & eFUNC_F_PRIORITY)
 				__cpool_rt_priq_remove_all(rtp, &rmq); 
@@ -148,8 +148,8 @@ cpool_rt_core_notifyl(cpool_core_t *core, eEvent_t events)
 				__cpool_rt_remove_all(rtp, &rmq); 
 
 			__cpool_com_task_mark_append(&rmq, eTASK_VM_F_POOL_DESTROYING|eTASK_VM_F_REMOVE_BYPOOL);
-			list_splice(&rmq, &core->dispatch_q);
-			cpool_core_ensure_servicesl(core, NULL);
+			list_splice(&rmq, &rtp->core->dispatch_q);
+			cpool_core_ensure_servicesl(rtp->core, NULL);
 		}
 	}
 
@@ -160,7 +160,7 @@ cpool_rt_core_notifyl(cpool_core_t *core, eEvent_t events)
 		OSPX_pthread_cond_broadcast(&rtp->cond_com);
 		for (;rtp->tsk_wref || rtp->ev_wref;) {
 			++ rtp->ref_sync;
-			OSPX_pthread_cond_wait(rtp->cond_sync, &core->mut);
+			OSPX_pthread_cond_wait(rtp->cond_sync, &rtp->core->mut);
 			-- rtp->ref_sync;
 		}
 	}
@@ -184,23 +184,23 @@ __cpool_rt_gettask_post(cpool_rt_t *rtp, thread_t *self, ctask_t *ptask)
 }
 
 int
-cpool_rt_core_dynamic_gettask(cpool_core_t *core, thread_t *self)
+cpool_rt_core_dynamic_gettask(void *priv, thread_t *self)
 {
 	ctask_t *ptask; 
-	cpool_rt_t *rtp = core->priv;
+	cpool_rt_t *rtp = priv;
 	
 	/**
 	 * We schedule the dispatching tasks firstly 
 	 */
-	OSPX_pthread_mutex_lock(&core->mut);
-	if (core->n_qdispatchs) 
-		return __cpool_com_get_dispatch_taskl2(core, self, rtp->n);
+	OSPX_pthread_mutex_lock(&rtp->core->mut);
+	if (rtp->core->n_qdispatchs) 
+		return __cpool_com_get_dispatch_taskl2(rtp->core, self, rtp->n);
 	
 	/**
 	 * If there are none active tasks to be retreived by us,
 	 * we return 0.
 	 */
-	if (core->paused || !core->npendings) 
+	if (rtp->core->paused || !rtp->core->npendings) 
 		return 0;
 
 	/**
@@ -208,7 +208,7 @@ cpool_rt_core_dynamic_gettask(cpool_core_t *core, thread_t *self)
 	 * is called by the Core
 	 */
 	assert (!list_empty(&rtp->ready_q));
-	-- core->npendings;
+	-- rtp->core->npendings;
 	
 	/**
 	 * Pop up a task from the pending queue and update the
@@ -226,8 +226,8 @@ cpool_rt_core_dynamic_gettask(cpool_core_t *core, thread_t *self)
 	/**
 	 * Notify the Core that we are ready now
 	 */
-	cpool_core_thread_status_changel(core, self, THREAD_STAT_RUN);
-	OSPX_pthread_mutex_unlock(&core->mut);
+	cpool_core_thread_status_changel(rtp->core, self, THREAD_STAT_RUN);
+	OSPX_pthread_mutex_unlock(&rtp->core->mut);
 	
 	__cpool_rt_gettask_post(rtp, self, ptask);
 	return 1;
@@ -249,18 +249,18 @@ cpool_rt_core_err_reasons(basic_task_t *ptask)
 }
 
 int
-cpool_rt_core_gettask(cpool_core_t *core, thread_t *self)
+cpool_rt_core_gettask(void *priv, thread_t *self)
 {
 	ctask_t *ptask; 
-	cpool_rt_t *rtp = core->priv;
+	cpool_rt_t *rtp = priv;
 	
 	/**
 	 * We schedule the dispatching tasks firstly 
 	 */
-	OSPX_pthread_mutex_lock(&core->mut);
-	if (core->n_qdispatchs) {
-		__cpool_com_get_dispatch_taskl(core, self, rtp->n);
-		OSPX_pthread_mutex_unlock(&core->mut);
+	OSPX_pthread_mutex_lock(&rtp->core->mut);
+	if (rtp->core->n_qdispatchs) {
+		__cpool_com_get_dispatch_taskl(rtp->core, self, rtp->n);
+		OSPX_pthread_mutex_unlock(&rtp->core->mut);
 
 		self->task_type = TASK_TYPE_DISPATCHED;
 		return 1;
@@ -270,14 +270,14 @@ cpool_rt_core_gettask(cpool_core_t *core, thread_t *self)
 	 * If there are none active tasks to be retreived by us,
 	 * we return 0.
 	 */
-	if (core->paused || !core->npendings) 
+	if (rtp->core->paused || !rtp->core->npendings) 
 		return 0;
 	/**
 	 * The pending queue must not be empty if this interface
 	 * is called by the Core
 	 */
 	assert (!list_empty(&rtp->ready_q));
-	-- core->npendings;
+	-- rtp->core->npendings;
 	
 	/**
 	 * Pop up a task from the pending queue and update the
@@ -285,25 +285,25 @@ cpool_rt_core_gettask(cpool_core_t *core, thread_t *self)
 	 */
 	ptask = list_first_entry(&rtp->ready_q, ctask_t, link);
 	__list_del(ptask->link.prev, ptask->link.next);
-	OSPX_pthread_mutex_unlock(&core->mut);
+	OSPX_pthread_mutex_unlock(&rtp->core->mut);
 	
 	__cpool_rt_gettask_post(rtp, self, ptask);
 	return 1;
 }
 
 int
-cpool_rt_core_pri_gettask(cpool_core_t *core, thread_t *self)
+cpool_rt_core_pri_gettask(void *priv, thread_t *self)
 {
 	ctask_t *ptask; 
-	cpool_rt_t *rtp = core->priv;
+	cpool_rt_t *rtp = priv;
 	
 	/**
 	 * We schedule the dispatching tasks firstly 
 	 */
-	OSPX_pthread_mutex_lock(&core->mut);
-	if (core->n_qdispatchs) {
-		__cpool_com_get_dispatch_taskl(core, self, rtp->n);
-		OSPX_pthread_mutex_unlock(&core->mut);
+	OSPX_pthread_mutex_lock(&rtp->core->mut);
+	if (rtp->core->n_qdispatchs) {
+		__cpool_com_get_dispatch_taskl(rtp->core, self, rtp->n);
+		OSPX_pthread_mutex_unlock(&rtp->core->mut);
 		self->task_type = TASK_TYPE_DISPATCHED;
 		return 1;
 	}
@@ -312,40 +312,40 @@ cpool_rt_core_pri_gettask(cpool_core_t *core, thread_t *self)
 	 * If there are none active tasks to be retreived by us,
 	 * we return 0. 
 	 */
-	 if (core->paused || !core->npendings)
+	 if (rtp->core->paused || !rtp->core->npendings)
 	 	return 0;
-	 -- core->npendings;
+	 -- rtp->core->npendings;
 
 	/**
 	 * Pop up a task from the task queue 
 	 */
 	ptask = __cpool_com_priq_pop(&rtp->c);
-	OSPX_pthread_mutex_unlock(&core->mut);
+	OSPX_pthread_mutex_unlock(&rtp->core->mut);
 	
 	__cpool_rt_gettask_post(rtp, self, ptask);
 	return 1;
 }
 
 int
-cpool_rt_core_dynamic_pri_gettask(cpool_core_t *core, thread_t *self)
+cpool_rt_core_dynamic_pri_gettask(void *priv, thread_t *self)
 {
 	ctask_t *ptask; 
-	cpool_rt_t *rtp = core->priv;
+	cpool_rt_t *rtp = priv;
 	
 	/**
 	 * We schedule the dispatching tasks firstly 
 	 */
-	OSPX_pthread_mutex_lock(&core->mut);
-	if (core->n_qdispatchs) 
-		return __cpool_com_get_dispatch_taskl2(core, self, rtp->n);
+	OSPX_pthread_mutex_lock(&rtp->core->mut);
+	if (rtp->core->n_qdispatchs) 
+		return __cpool_com_get_dispatch_taskl2(rtp->core, self, rtp->n);
 	
 	/**
 	 * If there are none active tasks to be retreived by us,
 	 * we return 0.
 	 */
-	if (core->paused || !core->npendings) 
+	if (rtp->core->paused || !rtp->core->npendings) 
 		return 0;
-	-- core->npendings;
+	-- rtp->core->npendings;
 	
 	/**
 	 * Pop up a task from the task queue 
@@ -361,68 +361,68 @@ cpool_rt_core_dynamic_pri_gettask(cpool_core_t *core, thread_t *self)
 	/**
 	 * Notify the Core that we are ready now
 	 */
-	cpool_core_thread_status_changel(core, self, THREAD_STAT_RUN);
-	OSPX_pthread_mutex_unlock(&core->mut);
+	cpool_core_thread_status_changel(rtp->core, self, THREAD_STAT_RUN);
+	OSPX_pthread_mutex_unlock(&rtp->core->mut);
 	
 	__cpool_rt_gettask_post(rtp, self, ptask);
 	return 1;
 }
 
 void 
-cpool_rt_core_finished(cpool_core_t *core, thread_t *self, basic_task_t *ptask, long eReasons)
+cpool_rt_core_finished(void *priv, thread_t *self, basic_task_t *ptask, long eReasons)
 {	
 	if (likely(!(eTASK_STAT_F_WPENDING & TASK_CAST_FAC(ptask)->f_stat))) 
 		cpool_core_objs_local_store(self, ptask);
 	else
-		__cpool_rt_task_queue(core, TASK_CAST_FAC(ptask));
+		__cpool_rt_task_queue(priv, TASK_CAST_FAC(ptask));
 }
 
 void 
-cpool_rt_core_pri_finished(cpool_core_t *core, thread_t *self, basic_task_t *ptask, long eReasons)
+cpool_rt_core_pri_finished(void *priv, thread_t *self, basic_task_t *ptask, long eReasons)
 {
 	if (likely(!(eTASK_STAT_F_WPENDING & TASK_CAST_FAC(ptask)->f_stat))) 
 		cpool_core_objs_local_store(self, ptask);
 	else {
 		__cpool_com_task_nice_adjust(TASK_CAST_FAC(ptask));
-		__cpool_rt_pri_task_queue(core, TASK_CAST_FAC(ptask));
+		__cpool_rt_pri_task_queue(priv, TASK_CAST_FAC(ptask));
 	} 
 }
 
 void 
-cpool_rt_core_dynamic_finished(cpool_core_t *core, thread_t *self, basic_task_t *ptask, long eReasons)
+cpool_rt_core_dynamic_finished(void *priv, thread_t *self, basic_task_t *ptask, long eReasons)
 {
 	/**
 	 * We should call \@cpool_core_thread_status_change to update the Core status
 	 * if the pool supports creating and destroying the threads dynamically
 	 */
-	assert (eFUNC_F_DYNAMIC_THREADS & ((cpool_rt_t *)(core->priv))->lflags);
+	assert (eFUNC_F_DYNAMIC_THREADS & ((cpool_rt_t *)priv)->lflags);
 	
 	if (list_empty(&self->dispatch_q))
-		cpool_core_thread_status_change(core, self, THREAD_STAT_COMPLETE);
+		cpool_core_thread_status_change(((cpool_rt_t *)priv)->core, self, THREAD_STAT_COMPLETE);
 	
 	if (likely(!(eTASK_STAT_F_WPENDING & TASK_CAST_FAC(ptask)->f_stat)))
 		cpool_core_objs_local_store(self, ptask);
 	else
-		__cpool_rt_task_queue(core, TASK_CAST_FAC(ptask));
+		__cpool_rt_task_queue(priv, TASK_CAST_FAC(ptask));
 }
 
 void 
-cpool_rt_core_dynamic_pri_finished(cpool_core_t *core, thread_t *self, basic_task_t *ptask, long eReasons)
+cpool_rt_core_dynamic_pri_finished(void *priv, thread_t *self, basic_task_t *ptask, long eReasons)
 {
 	/**
 	 * We should call \@cpool_core_thread_status_change to update the Core status
 	 * if the pool supports creating and destroying the threads dynamically
 	 */
-	assert (eFUNC_F_DYNAMIC_THREADS & ((cpool_rt_t *)(core->priv))->lflags);
+	assert (eFUNC_F_DYNAMIC_THREADS & ((cpool_rt_t *)priv)->lflags);
 	
 	if (list_empty(&self->dispatch_q))
-		cpool_core_thread_status_change(core, self, THREAD_STAT_COMPLETE);
+		cpool_core_thread_status_change(((cpool_rt_t *)priv)->core, self, THREAD_STAT_COMPLETE);
 	
 	if (likely(!(eTASK_STAT_F_WPENDING & TASK_CAST_FAC(ptask)->f_stat)))
 		cpool_core_objs_local_store(self, ptask);
 	else {
 		__cpool_com_task_nice_adjust(TASK_CAST_FAC(ptask));
-		__cpool_rt_pri_task_queue(core, TASK_CAST_FAC(ptask));
+		__cpool_rt_pri_task_queue(priv, TASK_CAST_FAC(ptask));
 	}
 }
 

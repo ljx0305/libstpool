@@ -684,11 +684,6 @@ typedef struct cpool_method {
 	cpool_basic_method_t   me;
 	
 	/**
-	 * Extended pool method sets
-	 */
-	cpool_extend_method_t  extme;
-	
-	/**
 	 * Advanced pool method sets
 	 */
 	cpool_advance_method_t advme;
@@ -697,11 +692,6 @@ typedef struct cpool_method {
 
 /** The function masks */
 enum {
-	/** 
-	 * The pool support the EXTENDED methods
-	 */
-	eFUNC_F_EXTEND = 0x01,
-	
 	/**
 	 * The pool support the ADVANCE methods
 	 */
@@ -758,14 +748,14 @@ struct cpool {
 	/**
 	 * The instance object created by the factory
 	 */
-	cpool_com_t *ins;	
+	void *ins;	
 	
 	/**
 	 * The interface to destroy the instance object
 	 *
 	 * \@destroy should be called by user to free the pool object if it is useless. 
 	 */
-	void (*destroy)(cpool_t *fac_ins);
+	void (*free)(cpool_t *fac_ins);
 }; 
 
 /** The definition of the pool factory */
