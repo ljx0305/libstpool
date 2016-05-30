@@ -231,6 +231,13 @@ cpool_gp_task_detach(void * ins, ctask_t *ptask)
 	assert (ptask0 && gpool && ptask0->task_run); 
 	assert (ptask0->f_stat & (eTASK_STAT_F_DISPATCHING|eTASK_STAT_F_SCHEDULING));
 	
+	if (!(ptask0->f_stat & (eTASK_STAT_F_DISPATCHING|eTASK_STAT_F_SCHEDULING))) {
+		MSG_log(M_GROUP, LOG_WARN,
+			"'%s': @stpool_task_detach is being called neither in task_run nor in task_err_handler!\n",
+			ptask->task_desc);
+		return;
+	}
+
 	/**
 	 * It is not neccessary to call @detach_task for the routine tasks 
 	 */
