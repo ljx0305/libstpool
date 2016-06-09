@@ -108,6 +108,25 @@ else
 fi
 fi
 
+# Check <stdint.h>
+echo -n "checking <stdint.h> ..."
+cat << _CODE_EOF >.test.c
+#include <stdint.h>
+
+int main()
+{
+	return 0;
+}
+_CODE_EOF
+${VAR_cross}gcc .test.c -o.test 2>/dev/null
+if test $? -eq 0
+	then
+		VAR_cflags+=" -DHAVE_STDINT_H"
+		echo " yes"
+	else
+		echo " no"
+fi
+
 # Check pthread_rwlock
 echo -n "checking pthread_rwlock ..."
 cat << _CODE_EOF >.test.c
@@ -163,6 +182,30 @@ ${VAR_cross}gcc .test.c -o.test -lrt 2>/dev/null
 if test $? -eq 0
 	then
 		VAR_cflags+=" -DHAVE_CLOCK_MONOTONIC"
+		echo " yes"
+	else
+		echo " no"
+fi
+
+# check pthread_condattr_setclock
+echo -n "checking pthread_condattr_setclock ..."
+cat << _CODE_EOF >.test.c
+#include <pthread.h>
+
+int main()
+{
+	pthread_condattr_t attr;
+	
+	if (!pthread_condattr_init(&attr)) {
+		pthread_condattr_setclock(&attr, 0);
+	}
+	return 0;
+}
+_CODE_EOF
+${VAR_cross}gcc .test.c -o.test -lrt -lpthread 2>/dev/null
+if test $? -eq 0
+	then
+		VAR_cflags+=" -DHAVE_PTHREAD_CONDATTR_SETCLOCK"
 		echo " yes"
 	else
 		echo " no"

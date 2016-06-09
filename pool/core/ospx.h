@@ -14,8 +14,10 @@
 #include "ospx_type.h"
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
-#include <SDKDDKVer.h> // InitializeCriticalSectionAndSpinCount
 #define _WIN
+#ifdef HAVE_SDKDDKVER_H
+#include <SDKDDKVer.h> // InitializeCriticalSectionAndSpinCount
+#endif
 #ifdef _USRDLL
 #define EXPORT __declspec(dllexport)
 #else
