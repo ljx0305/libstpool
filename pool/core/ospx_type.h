@@ -26,9 +26,9 @@
 #include <winsock2.h>
 #include <process.h>
 
-#ifdef _HAS_STDINT_H
+#if defined(_HAS_STDINT_H) || defined(HAVE_STDINT_H)
 #include <stdint.h>   /* For dev-c++ */
-#else
+#else 
 typedef __int8  int8_t;
 typedef __int16 int16_t;
 typedef __int32 int32_t;
@@ -78,8 +78,8 @@ typedef HANDLE OSPX_pthread_t;
 typedef CRITICAL_SECTION OSPX_pthread_mutex_t;
 
 typedef struct {
-	int boolean;
-	int ref;
+	int  boolean;
+	long ref;
 } OSPX_pthread_once_t;
 
 #define  OSPX_PTHREAD_ONCE_INIT {0, 0}
@@ -113,6 +113,7 @@ typedef sem_t OSPX_sem_t;
 #endif
 
 #ifdef HAVE_PTHREAD_RWLOCK
+#include <pthread.h>  // minGw + minsys
 typedef pthread_rwlock_t OSPX_pthread_rwlock_t;
 #else
 /* NOTE: The theory is from UNIX Network Programming (version2) */

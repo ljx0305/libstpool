@@ -284,6 +284,8 @@ OSPX_pthread_create(OSPX_pthread_t *handle, OSPX_pthread_attr_t *attr, int (*rou
 					case ep_FIFO:
 						sche = REALTIME_PRIORITY_CLASS;
 						break;
+					default:
+						break;
 					}
 					SetPriorityClass(h, sche);
 				}
