@@ -168,6 +168,30 @@ if test $? -eq 0
 		echo " no"
 fi
 
+# check pthread_condattr_setclock
+echo -n "checking pthread_condattr_setclock ..."
+cat << _CODE_EOF >.test.c
+#include <pthread.h>
+
+int main()
+{
+	pthread_condattr_t attr;
+	
+	if (!pthread_condattr_init(&attr)) {
+		pthread_condattr_setclock(&attr, 0);
+	}
+	return 0;
+}
+_CODE_EOF
+${VAR_cross}gcc .test.c -o.test -lrt -lpthread 2>/dev/null
+if test $? -eq 0
+	then
+		VAR_cflags+=" -DHAVE_PTHREAD_CONDATTR_SETCLOCK"
+		echo " yes"
+	else
+		echo " no"
+fi
+
 # check pthread_attr_getinheritsched
 echo -n "checking pthread_attr_getinheritsched ..."
 cat << _CODE_EOF >.test.c

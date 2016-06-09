@@ -528,7 +528,7 @@ OSPX_pthread_cond_init(OSPX_pthread_cond_t *cond)
 	int e;
 
 	pthread_condattr_t *attr = NULL;
-#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) 
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
 	/* We use the mononic clock if the OS supports it */
 	{
 		pthread_condattr_t attr0;
