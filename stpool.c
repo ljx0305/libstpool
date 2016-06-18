@@ -633,6 +633,51 @@ stpool_create(const char *desc, long eCAPs, int maxthreads, int minthreads, int 
 	return pool;
 }
 
+EXPORT stpool_t * 
+stpool_create_byfac(const char *fac, const char *desc, int maxthreads, int minthreads, int suspend, int pri_q_num)
+{
+	const char *fac_desc;
+	const cpool_factory_t *factory = NULL;
+	cpool_t *pool;
+	
+	if (!fac) {
+		MSG_log(M_POOL, LOG_ERR,
+			"fac can not be NULL\n");
+		
+		return NULL;
+	}
+
+	MSG_log(M_POOL, LOG_INFO,
+			"creating the pool(\"%s\") facory(%s) ...\n",
+			desc, fac);
+	
+	/**
+	 * Select the templates to create the pool 
+	 */
+	for (factory=first_factory(&fac_desc); factory; factory=next_factory(&fac_desc)) {
+		if (!strcmp(fac, fac_desc)) {
+			break;
+		}
+	}
+
+	if (!factory) {
+		MSG_log(M_POOL, LOG_WARN,
+			"Factory('%s') has not been registered !\n",
+			fac);
+
+		return NULL;
+	}
+	
+	if ((pool = factory->create(desc, maxthreads, minthreads, pri_q_num, suspend))) 
+		Invoke(atexit, pool, __lib_regist_atexit, pool);
+	else
+		MSG_log2(M_POOL, LOG_ERR,
+			"Failed to create the pool: Factory(\"%s\"/%p).",
+			fac, factory);
+
+	return pool;
+}
+
 EXPORT long 
 stpool_caps(stpool_t *pool)
 {

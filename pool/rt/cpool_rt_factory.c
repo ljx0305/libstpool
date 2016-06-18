@@ -84,12 +84,14 @@ __fac_rt_common_ctor(long efuncs, const cpool_method_t *me,
 	const char *desc, int maxthreads, int minthreads, int pri_q_num, int suspend)
 {
 	int  e;
-	cpool_t *pool = calloc(1, sizeof(cpool_t)); 
+	cpool_t *pool = calloc(1, sizeof(cpool_t) + strlen(desc) + 1); 
 
 	if (!pool)
 		return NULL;
 	
-	pool->desc = desc;
+	pool->desc = (char *)(pool + 1);
+	strcpy(pool->desc, desc);
+	
 	pool->efuncs = efuncs;
 	pool->me  = me;
 	pool->free = __fac_rt_common_dtor;
@@ -98,7 +100,7 @@ __fac_rt_common_ctor(long efuncs, const cpool_method_t *me,
 	/**
 	 * Create the rt pool instance
 	 */
-	if ((e=cpool_rt_create_instance((cpool_rt_t **)&pool->ins, desc, maxthreads, minthreads, pri_q_num, suspend, efuncs))) {
+	if ((e=cpool_rt_create_instance((cpool_rt_t **)&pool->ins, pool->desc, maxthreads, minthreads, pri_q_num, suspend, efuncs))) {
 		MSG_log2(M_RT, LOG_ERR,
 			   "Failed to create rt pool. code(%d)",
 			   e);

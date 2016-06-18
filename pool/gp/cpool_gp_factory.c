@@ -76,10 +76,10 @@ static cpool_method_t __gpool_me = {
 };
 
 void 
-__fac_gp_common_dtor(cpool_t *pool)
+__fac_gp_common_dtor(cpool_t *fac_ins)
 {
-	cpool_gp_free_instance(pool->ins);
-	free(pool);
+	cpool_gp_free_instance(fac_ins->ins);
+	free(fac_ins);
 }
 
 static cpool_t *
@@ -87,20 +87,22 @@ __fac_gp_common_ctor(long efuncs, const cpool_method_t *me,
 	const char *desc, int maxthreads, int minthreads, int priq_num, int suspend)
 {
 	int  e;
-	cpool_t *pool = calloc(1, sizeof(cpool_t));
+	cpool_t *pool = calloc(1, sizeof(cpool_t) + strlen(desc) + 1);
 
 	if (!pool)
 		return NULL;
 	
-	pool->desc = desc;
+	pool->desc = (char *)(pool + 1);
+	strcpy(pool->desc, desc);
+
 	pool->efuncs = efuncs;
 	pool->me  = me;
 	pool->free = __fac_gp_common_dtor;
 		
 	/**
-	 * Create the rt pool instance
+	 * Create the group pool instance
 	 */
-	if ((e=cpool_gp_create_instance((cpool_gp_t **)&pool->ins, desc, maxthreads, minthreads, priq_num, suspend, efuncs))) {
+	if ((e=cpool_gp_create_instance((cpool_gp_t **)&pool->ins, pool->desc, maxthreads, minthreads, priq_num, suspend, efuncs))) {
 		MSG_log(M_GROUP, LOG_ERR,
 			   "Failed to create gp pool. code(%d)\n",
 			   e);

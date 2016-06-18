@@ -136,6 +136,9 @@ cpool_rt_create_instance(cpool_rt_t **p_rtp, const char *core_desc, int max, int
 void 
 cpool_rt_free_instance(cpool_rt_t *rtp)
 {
+#ifndef NDEBUG
+	bzero(rtp, sizeof(*rtp));
+#endif
 	free(rtp);
 }
 

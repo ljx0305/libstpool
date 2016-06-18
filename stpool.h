@@ -510,7 +510,7 @@ EXPORT size_t stpool_task_size();
  *
  * @param [in] ptask            the task object needed to be initialized
  * @param [in] pool             the destination pool (Can be NULL)
- * @param [in] task_name        a const string to describle the task
+ * @param [in] task_name        a const string to describle the task (NOTE: The library just copys its address) 
  * @param [in] task_run         the task's working routine     (Can not be NULL)
  * @param [in] task_err_handler the task's completion routine  (Can be NULL)
  * @param [in] task_arg         the argument reserved for task (Can be NULL)
@@ -886,7 +886,7 @@ EXPORT const char *stpool_strerror(int error);
 /**
  * Create a task pool
  *
- * @param [in] desc       a const string to describle the pool.
+ * @param [in] desc       a const string to describle the pool. (the library will copy its contents)
  * @param [in] eCAPs      the neccessary capabilities that the pool must support
  *                        (see stpool_caps.h for more details)
  *
@@ -935,6 +935,11 @@ EXPORT const char *stpool_strerror(int error);
  *       does not contain eCAP_F_SUSPEND and eCAP_F_PRIORITY
  */
 EXPORT stpool_t * stpool_create(const char *desc, long eCAPs, int maxthreads, int minthreads, int suspend, int pri_q_num);
+
+/**
+ * Get a task pool according to the factory name
+ */
+EXPORT stpool_t * stpool_create_byfac(const char *fac, const char *desc, int maxthreads, int minthreads, int suspend, int pri_q_num);
 
 /**
  * Get the real capbilities of the created pool.
