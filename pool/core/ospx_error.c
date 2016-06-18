@@ -260,7 +260,7 @@ OSPX_sys_strerror(uint32_t code)
 		{EMSGSIZE,        "Message too long"},
 		{EHOSTUNREACH,    "No route to host"},
 		{ECONNRESET,      "Connection reset by peer"},
-		{ETIMEDOUT,       "Connection timed out"},
+		{ETIMEDOUT,       "timed out"},
 		{EDESTADDRREQ,    "Destination address required"},
 		{ENETUNREACH,     "Network is unreachable"},
 		{EADDRINUSE,      "Address already in use"},

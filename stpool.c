@@ -643,7 +643,7 @@ stpool_create(const char *desc, long eCAPs, int maxthreads, int minthreads, int 
 	} while (0)
 
 EXPORT const char *
-stpool_factory_list(char *buffer, int bufferlen, long lflags)
+stpool_factory_list2(char *buffer, int bufferlen, long lflags)
 {
 	int  n = 0;
 	int  bfirst = 1;

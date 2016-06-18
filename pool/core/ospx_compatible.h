@@ -20,7 +20,7 @@
 #endif
 
 #define PRI64 "%I64"
-#if defined(_inline) && !defined(inline) //minGw
+#if !defined(inline) //minGw
 #define inline _inline
 #endif
 
