@@ -127,30 +127,6 @@ if test $? -eq 0
 		echo " no"
 fi
 
-# Check uint64_t
-echo -n "checking uint64_t ..."
-if [ 1 -eq  $(echo $VAR_cflags|grep HAS_STDINT_H|wc -l) ]; then
-	cat << _CODE_EOF >.test.c
-	#include <stdint.h>
-
-	int main()
-	{
-		uint64_t res;
-		return 0;
-	}
-_CODE_EOF
-	${VAR_cross}gcc .test.c -o .test 2>/dev/null
-	if test $? -eq 0
-		then
-			VAR_cflags+=" -DHAS_UINT64"
-			echo " yes"
-		else
-			echo " no"
-	fi
-else
-	echo "no"
-fi
-
 # Check pthread_rwlock
 echo -n "checking pthread_rwlock ..."
 cat << _CODE_EOF >.test.c
