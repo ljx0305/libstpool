@@ -26,6 +26,34 @@
 
 typedef struct cpool stpool_t;
 
+/** Flags for @stpool_factory_list */
+enum {
+	/**
+	 * Show the factory name
+	 */
+	LIST_F_NAME          = 0x1,
+	
+	/**
+	 * Show the capabilies
+	 */
+	LIST_F_CAPS          = 0x2,
+	
+	/**
+	 * Show the readable capabilies
+	 */
+	LIST_F_CAPS_READABLE = 0x4,
+	
+	/**
+	 * Show the perfermence scores
+	 */
+	LIST_F_SCORES        = 0x8,
+	
+	/**
+	 * All supported flags sets
+	 */
+	LIST_F_ALL = LIST_F_NAME|LIST_F_CAPS|LIST_F_CAPS_READABLE|LIST_F_SCORES,
+};
+
 /** Error code sets */
 enum {	
 	/**
@@ -937,6 +965,16 @@ EXPORT const char *stpool_strerror(int error);
 EXPORT stpool_t * stpool_create(const char *desc, long eCAPs, int maxthreads, int minthreads, int suspend, int pri_q_num);
 
 /**
+ * List the pool factories supported by current library.
+ */
+#define stpool_factory_list(lflags) stpool_factory_list2(NULL, 0, lflags)
+
+/**
+ * List the pool factories supported by current library.
+ */
+EXPORT const char *stpool_factory_list2(char *obuffer, int obufferlen, long lflags);
+
+/**
  * Get a task pool according to the factory name
  */
 EXPORT stpool_t * stpool_create_byfac(const char *fac, const char *desc, int maxthreads, int minthreads, int suspend, int pri_q_num);
@@ -1129,7 +1167,11 @@ EXPORT const char *stpool_stat_print2(struct pool_stat *stat, char *buffer, size
  */
 EXPORT const char *stpool_stat_print(stpool_t *pool);
 
-/*----------------------Realtime map -----------------------*/
+/**
+ * Print the scheduler's informations into the inner static buffer 
+ */
+#define stpool_scheduler_map_dump(pool) stpool_scheduler_map_dump2(pool, NULL, 0)
+
 /**
  * Print the scheduler's informations into the buffer 
  *
@@ -1143,11 +1185,6 @@ EXPORT const char *stpool_stat_print(stpool_t *pool);
  * @return the address of the buffer who has been filled up with the scheduler's informations 
  */
 EXPORT char *stpool_scheduler_map_dump2(stpool_t *pool, char *buffer, int len);
-
-/**
- * Print the scheduler's informations into the inner static buffer 
- */
-#define stpool_scheduler_map_dump(pool) stpool_scheduler_map_dump2(pool, NULL, 0)
 
 /**
  * Suspend the pool
