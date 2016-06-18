@@ -121,10 +121,34 @@ _CODE_EOF
 ${VAR_cross}gcc .test.c -o .test 2>/dev/null
 if test $? -eq 0
 	then
-		VAR_cflags+=" -DHAVE_STDINT_H"
+		VAR_cflags+=" -DHAS_STDINT_H"
 		echo " yes"
 	else
 		echo " no"
+fi
+
+# Check uint64_t
+echo -n "checking uint64_t ..."
+if [ 1 -eq  $(echo $VAR_cflags|grep HAS_STDINT_H|wc -l) ]; then
+	cat << _CODE_EOF >.test.c
+	#include <stdint.h>
+
+	int main()
+	{
+		uint64_t res;
+		return 0;
+	}
+_CODE_EOF
+	${VAR_cross}gcc .test.c -o .test 2>/dev/null
+	if test $? -eq 0
+		then
+			VAR_cflags+=" -DHAS_UINT64"
+			echo " yes"
+		else
+			echo " no"
+	fi
+else
+	echo "no"
 fi
 
 # Check pthread_rwlock
@@ -141,7 +165,7 @@ _CODE_EOF
 ${VAR_cross}gcc .test.c -o .test -lpthread 2>/dev/null
 if test $? -eq 0
 	then
-		VAR_cflags+=" -DHAVE_PTHREAD_RWLOCK"
+		VAR_cflags+=" -DHAS_PTHREAD_RWLOCK"
 		echo " yes"
 	else
 		echo " no"
@@ -161,7 +185,7 @@ _CODE_EOF
 ${VAR_cross}gcc .test.c -o .test -lrt 2>/dev/null 
 if test $? -eq 0
 	then
-		VAR_cflags+=" -DHAVE_CLOCK_GETTIME"
+		VAR_cflags+=" -DHAS_CLOCK_GETTIME"
 		echo " yes"
 	else
 		echo  " no"
@@ -181,7 +205,7 @@ _CODE_EOF
 ${VAR_cross}gcc .test.c -o .test -lrt 2>/dev/null
 if test $? -eq 0
 	then
-		VAR_cflags+=" -DHAVE_CLOCK_MONOTONIC"
+		VAR_cflags+=" -DHAS_CLOCK_MONOTONIC"
 		echo " yes"
 	else
 		echo " no"
@@ -205,7 +229,7 @@ _CODE_EOF
 ${VAR_cross}gcc .test.c -o .test -lrt -lpthread 2>/dev/null
 if test $? -eq 0
 	then
-		VAR_cflags+=" -DHAVE_PTHREAD_CONDATTR_SETCLOCK"
+		VAR_cflags+=" -DHAS_PTHREAD_CONDATTR_SETCLOCK"
 		echo " yes"
 	else
 		echo " no"
@@ -225,7 +249,7 @@ _CODE_EOF
 ${VAR_cross}gcc .test.c -o .test -lpthread 2>/dev/null 
 if test $? -eq 0
 	then
-		VAR_cflags+=" -DHAVE_PTHREAD_ATTR_GETINHERITSCHED"
+		VAR_cflags+=" -DHAS_PTHREAD_ATTR_GETINHERITSCHED"
 		echo " yes"
 	else
 		echo " no"
@@ -245,7 +269,7 @@ _CODE_EOF
 ${VAR_cross}gcc .test.c -o .test -lpthread 2>/dev/null
 if test $? -eq 0
 	then
-		VAR_cflags+=" -DHAVE_SEM_TIMEDWAIT"
+		VAR_cflags+=" -DHAS_SEM_TIMEDWAIT"
 		echo " yes"
 	else
 		echo " no"
@@ -265,7 +289,7 @@ _CODE_EOF
 ${VAR_cross}gcc .test.c -o .test 2>/dev/null 
 if test $? -eq 0
 	then
-		VAR_cflags+=" -DHAVE_PRCTL"
+		VAR_cflags+=" -DHAS_PRCTL"
 		echo " yes"
 	else
 		echo " no"
