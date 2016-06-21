@@ -743,7 +743,7 @@ struct cpool {
 	/**
 	 * The description of the instance 
 	 */
-	const char  *desc;
+	char  *desc;
 
 	/**
 	 * The instance object created by the factory

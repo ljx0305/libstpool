@@ -17,7 +17,7 @@
 #include "cpool_gp_wait_internal.h"
 
 int  
-cpool_gp_create_instance(cpool_gp_t **p_gpool, const char *desc, int max, int min, int pri_q_num, int suspend, long lflags)
+cpool_gp_create_instance(cpool_gp_t **p_gpool, const char *core_desc, int max, int min, int pri_q_num, int suspend, long lflags)
 {
 	static cpool_core_method_t __me = {
 		"Group",
@@ -74,7 +74,7 @@ cpool_gp_create_instance(cpool_gp_t **p_gpool, const char *desc, int max, int mi
 	/**
 	 * Start creating the core 
 	 */
-	if (cpool_core_ctor(gpool->core, desc, me, max, min, suspend, core_flags)) {
+	if (cpool_core_ctor(gpool->core, core_desc, me, max, min, suspend, core_flags)) {
 		free(gpool);
 		return eERR_OTHER;
 	}

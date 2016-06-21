@@ -20,8 +20,8 @@
 #endif
 
 #define PRI64 "%I64"
-#if defined(_inline) && !defined(inline) //minGw
-#define inline _inline
+#if !defined(inline) //minGw
+#define inline __inline
 #endif
 
 //MSVC++ 12.0 _MSC_VER == 1800 (Visual Studio 2013)

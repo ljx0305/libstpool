@@ -26,6 +26,34 @@
 
 typedef struct cpool stpool_t;
 
+/** Flags for @stpool_factory_list */
+enum {
+	/**
+	 * Show the factory name
+	 */
+	LIST_F_NAME          = 0x1,
+	
+	/**
+	 * Show the capabilies
+	 */
+	LIST_F_CAPS          = 0x2,
+	
+	/**
+	 * Show the readable capabilies
+	 */
+	LIST_F_CAPS_READABLE = 0x4,
+	
+	/**
+	 * Show the perfermence scores
+	 */
+	LIST_F_SCORES        = 0x8,
+	
+	/**
+	 * All supported flags sets
+	 */
+	LIST_F_ALL = LIST_F_NAME|LIST_F_CAPS|LIST_F_CAPS_READABLE|LIST_F_SCORES,
+};
+
 /** Error code sets */
 enum {	
 	/**
@@ -510,7 +538,7 @@ EXPORT size_t stpool_task_size();
  *
  * @param [in] ptask            the task object needed to be initialized
  * @param [in] pool             the destination pool (Can be NULL)
- * @param [in] task_name        a const string to describle the task
+ * @param [in] task_name        a const string to describle the task (NOTE: The library just copys its address) 
  * @param [in] task_run         the task's working routine     (Can not be NULL)
  * @param [in] task_err_handler the task's completion routine  (Can be NULL)
  * @param [in] task_arg         the argument reserved for task (Can be NULL)
@@ -886,7 +914,7 @@ EXPORT const char *stpool_strerror(int error);
 /**
  * Create a task pool
  *
- * @param [in] desc       a const string to describle the pool.
+ * @param [in] desc       a const string to describle the pool. (the library will copy its contents)
  * @param [in] eCAPs      the neccessary capabilities that the pool must support
  *                        (see stpool_caps.h for more details)
  *
@@ -935,6 +963,21 @@ EXPORT const char *stpool_strerror(int error);
  *       does not contain eCAP_F_SUSPEND and eCAP_F_PRIORITY
  */
 EXPORT stpool_t * stpool_create(const char *desc, long eCAPs, int maxthreads, int minthreads, int suspend, int pri_q_num);
+
+/**
+ * List the pool factories supported by current library.
+ */
+#define stpool_factory_list(lflags) stpool_factory_list2(NULL, 0, lflags)
+
+/**
+ * List the pool factories supported by current library.
+ */
+EXPORT const char *stpool_factory_list2(char *obuffer, int obufferlen, long lflags);
+
+/**
+ * Get a task pool according to the factory name
+ */
+EXPORT stpool_t * stpool_create_byfac(const char *fac, const char *desc, int maxthreads, int minthreads, int suspend, int pri_q_num);
 
 /**
  * Get the real capbilities of the created pool.
@@ -1124,7 +1167,11 @@ EXPORT const char *stpool_stat_print2(struct pool_stat *stat, char *buffer, size
  */
 EXPORT const char *stpool_stat_print(stpool_t *pool);
 
-/*----------------------Realtime map -----------------------*/
+/**
+ * Print the scheduler's informations into the inner static buffer 
+ */
+#define stpool_scheduler_map_dump(pool) stpool_scheduler_map_dump2(pool, NULL, 0)
+
 /**
  * Print the scheduler's informations into the buffer 
  *
@@ -1138,11 +1185,6 @@ EXPORT const char *stpool_stat_print(stpool_t *pool);
  * @return the address of the buffer who has been filled up with the scheduler's informations 
  */
 EXPORT char *stpool_scheduler_map_dump2(stpool_t *pool, char *buffer, int len);
-
-/**
- * Print the scheduler's informations into the inner static buffer 
- */
-#define stpool_scheduler_map_dump(pool) stpool_scheduler_map_dump2(pool, NULL, 0)
 
 /**
  * Suspend the pool

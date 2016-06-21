@@ -15,7 +15,7 @@
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 #define _WIN
-#ifdef HAVE_SDKDDKVER_H
+#ifdef HAS_SDKDDKVER_H
 #include <SDKDDKVer.h> // InitializeCriticalSectionAndSpinCount
 #endif
 #ifdef _USRDLL
@@ -170,7 +170,7 @@ EXPORT int OSPX_sem_destroy(OSPX_sem_t *);
 #endif
 
 /** RWlock */
-#ifdef HAVE_PTHREAD_RWLOCK
+#ifdef HAS_PTHREAD_RWLOCK
 #define OSPX_pthread_rwlock_init(rwlock)      pthread_rwlock_init(rwlock, NULL)
 #define OSPX_pthread_rwlock_rdlock(rwlock)    pthread_rwlock_rdlock(rwlock)
 #define OSPX_pthread_rwlock_tryrdlock(rwlock) pthread_rwlock_tryrdlock(rwlock)

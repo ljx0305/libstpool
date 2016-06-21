@@ -26,7 +26,7 @@
 #include <winsock2.h>
 #include <process.h>
 
-#if defined(_HAS_STDINT_H) || defined(HAVE_STDINT_H)
+#if defined(_HAS_STDINT_H) || defined(HAS_STDINT_H)
 #include <stdint.h>   /* For dev-c++ */
 #else 
 typedef __int8  int8_t;
@@ -112,7 +112,7 @@ typedef sem_t OSPX_sem_t;
 
 #endif
 
-#ifdef HAVE_PTHREAD_RWLOCK
+#ifdef HAS_PTHREAD_RWLOCK
 #include <pthread.h>  // minGw + minsys
 typedef pthread_rwlock_t OSPX_pthread_rwlock_t;
 #else

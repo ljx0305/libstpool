@@ -46,7 +46,11 @@
 #define EMSGSIZE     EOFF(11)
 #define EHOSTUNREACH EOFF(12)
 #define ECONNRESET   EOFF(13)
-//#define ETIMEDOUT    EOFF(14)
+
+#ifndef ETIMEDOUT
+#define ETIMEDOUT    EOFF(14)
+#endif
+
 #define EEDESTADDRREQ EOFF(15)
 #define ENETUNREACH   EOFF(16)
 #define EADDRINUSE    EOFF(17)

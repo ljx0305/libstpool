@@ -331,7 +331,7 @@ OSPX_pthread_create(OSPX_pthread_t *handle, OSPX_pthread_attr_t *attr, int (*rou
 			/* Set the schedule policy */
 			if (ep_NONE != attr->sche_policy) {	
 				/* android-NDK does not support @pthread_attr_get_inheritsched */
-#ifdef HAVE_PTHREAD_ATTR_GETINHERITSCHED
+#ifdef HAS_PTHREAD_ATTR_GETINHERITSCHED
 				int inh;
 				
 				pthread_attr_getinheritsched(pattr, &inh);
@@ -530,7 +530,7 @@ OSPX_pthread_cond_init(OSPX_pthread_cond_t *cond)
 	int e;
 
 	pthread_condattr_t *attr = NULL;
-#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+#if defined(HAS_CLOCK_GETTIME) && defined(HAS_CLOCK_MONOTONIC) && defined(HAS_PTHREAD_CONDATTR_SETCLOCK)
 	/* We use the mononic clock if the OS supports it */
 	{
 		pthread_condattr_t attr0;
@@ -557,7 +557,6 @@ OSPX_pthread_cond_timedwait(OSPX_pthread_cond_t *cond, OSPX_pthread_mutex_t *mut
 #ifdef _WIN
 	int generation_at_start;
 	int waiting = 1;
-	int result = -1;
 	DWORD ms = INFINITE, to_orig = INFINITE, startTime, endTime;
 	if (to >= 0) 
 		to_orig = ms = to;	
@@ -617,8 +616,8 @@ OSPX_pthread_cond_timedwait(OSPX_pthread_cond_t *cond, OSPX_pthread_mutex_t *mut
 	if (0 > to)
 		error = pthread_cond_wait(cond, mut);
 
-#ifdef HAVE_CLOCK_GETTIME
-#ifdef HAVE_CLOCK_MONOTONIC
+#ifdef HAS_CLOCK_GETTIME
+#ifdef HAS_CLOCK_MONOTONIC
 	clock_gettime(CLOCK_MONOTONIC, &abstime);
 #else	
 	clock_gettime(CLOCK_REALTIME, &abstime);
@@ -753,7 +752,7 @@ OSPX_sem_timedwait(OSPX_sem_t *sem, long ms)
 
 	assert(sem->waiters >= 0 && sem->cakes >= 0);
 	LeaveCriticalSection(&sem->section);
-#elif defined(HAVE_SEM_TIMEDWAIT)	
+#elif defined(HAS_SEM_TIMEDWAIT)	
 	if (0 > ms)
 		error = sem_wait(sem);
 	else {
@@ -776,7 +775,7 @@ OSPX_sem_timedwait(OSPX_sem_t *sem, long ms)
 }
 
 
-#ifndef HAVE_PTHREAD_RWLOCK
+#ifndef HAS_PTHREAD_RWLOCK
 static const int RWMAGIC = 0xf2349e20;
 
 EXPORT int 
